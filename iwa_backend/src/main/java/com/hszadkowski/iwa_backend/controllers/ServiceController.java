@@ -1,7 +1,7 @@
 package com.hszadkowski.iwa_backend.controllers;
 
-import com.hszadkowski.iwa_backend.dto.CreateOrUpdateServiceDto;
-import com.hszadkowski.iwa_backend.dto.ServiceResponseDto;
+import com.hszadkowski.iwa_backend.dto.service.CreateOrUpdateServiceDto;
+import com.hszadkowski.iwa_backend.dto.service.ServiceResponseDto;
 import com.hszadkowski.iwa_backend.services.interfaces.MakeUpServicesService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

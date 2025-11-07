@@ -1,6 +1,6 @@
 package com.hszadkowski.iwa_backend.services.implementations;
 
-import com.hszadkowski.iwa_backend.dto.*;
+import com.hszadkowski.iwa_backend.dto.auth.*;
 import com.hszadkowski.iwa_backend.exceptions.UserAlreadyExistsException;
 import com.hszadkowski.iwa_backend.models.AppUser;
 import com.hszadkowski.iwa_backend.repos.UserRepository;

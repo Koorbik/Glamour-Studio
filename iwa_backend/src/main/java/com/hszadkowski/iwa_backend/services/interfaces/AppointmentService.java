@@ -1,9 +1,9 @@
 package com.hszadkowski.iwa_backend.services.interfaces;
 
-import com.hszadkowski.iwa_backend.dto.AppointmentResponseDto;
-import com.hszadkowski.iwa_backend.dto.BookAppointmentDto;
-import com.hszadkowski.iwa_backend.dto.RescheduleAppointmentDto;
-import com.hszadkowski.iwa_backend.dto.UpdateAppointmentStatusDto;
+import com.hszadkowski.iwa_backend.dto.appointment.AppointmentResponseDto;
+import com.hszadkowski.iwa_backend.dto.appointment.BookAppointmentDto;
+import com.hszadkowski.iwa_backend.dto.appointment.RescheduleAppointmentDto;
+import com.hszadkowski.iwa_backend.dto.appointment.UpdateAppointmentStatusDto;
 
 import java.util.List;
 import java.util.Map;

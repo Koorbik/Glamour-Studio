@@ -1,6 +1,6 @@
 package com.hszadkowski.iwa_backend.services.implementations;
 
-import com.hszadkowski.iwa_backend.dto.UserProfileUpdateDto;
+import com.hszadkowski.iwa_backend.dto.user.UserProfileUpdateDto;
 import com.hszadkowski.iwa_backend.models.AppUser;
 import com.hszadkowski.iwa_backend.repos.UserRepository;
 import com.hszadkowski.iwa_backend.services.interfaces.UserService;

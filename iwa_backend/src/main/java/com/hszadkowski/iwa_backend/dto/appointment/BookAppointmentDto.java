@@ -1,4 +1,4 @@
-package com.hszadkowski.iwa_backend.dto;
+package com.hszadkowski.iwa_backend.dto.appointment;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

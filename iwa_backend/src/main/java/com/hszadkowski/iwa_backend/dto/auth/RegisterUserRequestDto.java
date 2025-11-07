@@ -1,4 +1,4 @@
-package com.hszadkowski.iwa_backend.dto;
+package com.hszadkowski.iwa_backend.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -31,5 +31,5 @@ public class RegisterUserRequestDto {
     @NotBlank @Size(min = 8, max = 100)
     private String password;
 
-    private String role; // passing role should be done differently to up the security
+    private String role; // TODO: passing role should be done differently to up the security
 }

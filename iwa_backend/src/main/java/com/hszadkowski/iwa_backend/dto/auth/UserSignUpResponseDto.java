@@ -1,4 +1,4 @@
-package com.hszadkowski.iwa_backend.dto;
+package com.hszadkowski.iwa_backend.dto.auth;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,5 +12,5 @@ public class UserSignUpResponseDto {
     private String email;
     private String phoneNum;
     private String role;
-    private String verificationCode; // just for testing comfort, delete later
+    private String verificationCode; // TODO: just for testing comfort, delete later
 }

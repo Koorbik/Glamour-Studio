@@ -1,4 +1,4 @@
-package com.hszadkowski.iwa_backend.dto;
+package com.hszadkowski.iwa_backend.dto.service;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

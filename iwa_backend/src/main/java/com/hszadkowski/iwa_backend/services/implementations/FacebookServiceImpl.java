@@ -1,6 +1,6 @@
 package com.hszadkowski.iwa_backend.services.implementations;
 
-import com.hszadkowski.iwa_backend.dto.FacebookUserDto;
+import com.hszadkowski.iwa_backend.dto.auth.FacebookUserDto;
 import com.hszadkowski.iwa_backend.services.interfaces.FacebookService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.hszadkowski.iwa_backend.dto;
+package com.hszadkowski.iwa_backend.dto.availability;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

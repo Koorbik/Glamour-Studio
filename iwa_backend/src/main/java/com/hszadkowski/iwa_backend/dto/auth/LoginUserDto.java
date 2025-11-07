@@ -1,19 +1,22 @@
-package com.hszadkowski.iwa_backend.dto;
+package com.hszadkowski.iwa_backend.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class VerifyUserDto {
+@AllArgsConstructor
+public class LoginUserDto {
 
     @NotBlank
     @Email
     @Size(max = 100)
     private String email;
 
-    private String verificationCode;
+    @NotBlank @Size(min = 8, max = 100)
+    private String password;
 }
