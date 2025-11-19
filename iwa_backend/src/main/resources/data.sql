@@ -46,31 +46,31 @@ INSERT INTO services (name, description, duration_min, price) VALUES
 
 -- Basic Makeup slots (service_id = 1)
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked) VALUES
-(1, 1, '2025-06-30 09:00:00', '2025-06-30 10:00:00', false),
-(1, 1, '2025-06-30 10:30:00', '2025-06-30 11:30:00', false),
-(1, 1, '2025-07-02 14:00:00', '2025-07-02 15:00:00', false),
-(1, 1, '2025-07-01 09:00:00', '2025-07-01 10:00:00', false);
+(1, 1, '2030-01-30 09:00:00', '2030-01-30 10:00:00', false),
+(1, 1, '2030-01-30 10:30:00', '2030-01-30 11:30:00', false),
+(1, 1, '2030-02-02 14:00:00', '2030-02-02 15:00:00', false),
+(1, 1, '2030-02-01 09:00:00', '2030-02-01 10:00:00', false);
 
 -- Evening Makeup slots (service_id = 2)
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked) VALUES
-(1, 2, '2025-06-10 16:00:00', '2025-06-10 17:30:00', false),
-(1, 2, '2025-06-11 17:00:00', '2025-06-11 18:30:00', false),
-(1, 2, '2025-06-13 16:00:00', '2025-06-13 17:30:00', false);
+(1, 2, '2030-01-10 16:00:00', '2030-01-10 17:30:00', false),
+(1, 2, '2030-01-11 17:00:00', '2030-01-11 18:30:00', false),
+(1, 2, '2030-01-13 16:00:00', '2030-01-13 17:30:00', false);
 
 -- Bridal Makeup slots (service_id = 3)
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked) VALUES
-(1, 3, '2025-06-15 08:00:00', '2025-06-15 10:00:00', false),
-(1, 3, '2025-06-16 09:00:00', '2025-06-16 11:00:00', false),
-(1, 3, '2025-06-20 08:00:00', '2025-06-20 10:00:00', false);
+(1, 3, '2030-01-15 08:00:00', '2030-01-15 10:00:00', false),
+(1, 3, '2030-01-16 09:00:00', '2030-01-16 11:00:00', false),
+(1, 3, '2030-01-20 08:00:00', '2030-01-20 10:00:00', false);
 
 -- Makeup Lesson slots (service_id = 4)
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked) VALUES
-(1, 4, '2025-06-10 13:00:00', '2025-06-10 14:30:00', false),
-(1, 4, '2025-06-12 15:00:00', '2025-06-12 16:30:00', false);
+(1, 4, '2030-01-10 13:00:00', '2030-01-10 14:30:00', false),
+(1, 4, '2030-01-12 15:00:00', '2030-01-12 16:30:00', false);
 
 -- Add one already booked slot for testing
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked) VALUES
-(1, 1, '2025-06-10 12:00:00', '2025-06-10 13:00:00', true);
+(1, 1, '2030-01-10 12:00:00', '2030-01-10 13:00:00', true);
 
 -- Add one slot in the past for testing (should not be bookable)
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked) VALUES

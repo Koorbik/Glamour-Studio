@@ -28,6 +28,9 @@ public class Payment {
     @JoinColumn(name = "app_user_id")
     private AppUser appUser;
 
+    @Column(name = "transaction_id")
+    private String transactionId;
+
     private BigDecimal amount;
     private String status;
     private LocalDate paidAt;
