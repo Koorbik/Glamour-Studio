@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
@@ -33,5 +34,5 @@ public class Payment {
 
     private BigDecimal amount;
     private String status;
-    private LocalDate paidAt;
+    private LocalDateTime paidAt;
 }

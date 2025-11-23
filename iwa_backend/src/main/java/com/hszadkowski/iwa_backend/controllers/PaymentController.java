@@ -28,4 +28,10 @@ public class PaymentController {
 
         return ResponseEntity.ok(ApiResponse.success("Order created", responseDto));
     }
+
+    @PostMapping("/notify") // TODO: after installing ngrok -> verify OpenPayU-Signature header against second_key
+    public ResponseEntity<Void> handleNotification(@RequestBody String payload) {
+        payUService.handleNotification(payload);
+        return ResponseEntity.ok().build();
+    }
 }

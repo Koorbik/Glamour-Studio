@@ -24,4 +24,5 @@ public class AppointmentResponseDto {
     private String location;
     private LocalDate scheduledAt;
     private String description;
+    private String paymentStatus;
 }

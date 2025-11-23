@@ -1,5 +1,7 @@
 package com.hszadkowski.iwa_backend.services.implementations;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hszadkowski.iwa_backend.dto.payment.PaymentInitiationDto;
 import com.hszadkowski.iwa_backend.dto.payu.PayUOrderCreateRequestDto;
 import com.hszadkowski.iwa_backend.dto.payu.PayUOrderResponseDto;
@@ -50,8 +52,7 @@ public class PayUServiceImpl implements PayUService {
     @Transactional
     public PaymentInitiationDto createOrder(Integer appointmentId, String clientIp) {
 
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found"));
+        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new AppointmentNotFoundException("Appointment not found"));
 
         PayUTokenResponseDto token = getAuthToken();
 
@@ -59,33 +60,21 @@ public class PayUServiceImpl implements PayUService {
         int totalAmount = price.multiply(new BigDecimal(100)).intValue();
         String description = appointment.getService().getName();
 
-        Payment payment = new Payment();
-        payment.setAppointment(appointment);
-        payment.setAppUser(appointment.getAppUser());
-        payment.setAmount(price);
+        java.util.Optional<Payment> existingPayment = paymentRepository.findByAppointment(appointment);
+        Payment payment;
+        if (existingPayment.isPresent()) {
+            payment = existingPayment.get();
+        } else {
+            payment = new Payment();
+            payment.setAppointment(appointment);
+            payment.setAppUser(appointment.getAppUser());
+            payment.setAmount(price);
+        }
+
         payment.setStatus("PENDING");
         paymentRepository.save(payment);
 
-        PayUOrderCreateRequestDto requestDto = PayUOrderCreateRequestDto.builder()
-                .notifyUrl(notifyUrl)
-                .continueUrl(continueUrl)
-                .customerIp(clientIp)
-                .merchantPosId(payuPosId)
-                .description(description)
-                .currencyCode("PLN")
-                .totalAmount(totalAmount)
-                .products(Collections.singletonList(PayUOrderCreateRequestDto.Product.builder()
-                        .name(description)
-                        .unitPrice(totalAmount)
-                        .quantity(1)
-                        .build()))
-                .buyer(PayUOrderCreateRequestDto.Buyer.builder()
-                        .email(appointment.getAppUser().getEmail())
-                        .firstName(appointment.getAppUser().getName())
-                        .lastName(appointment.getAppUser().getSurname())
-                        .language("pl")
-                        .build())
-                .build();
+        PayUOrderCreateRequestDto requestDto = PayUOrderCreateRequestDto.builder().notifyUrl(notifyUrl).continueUrl(continueUrl).customerIp(clientIp).merchantPosId(payuPosId).description(description).currencyCode("PLN").totalAmount(totalAmount).products(Collections.singletonList(PayUOrderCreateRequestDto.Product.builder().name(description).unitPrice(totalAmount).quantity(1).build())).buyer(PayUOrderCreateRequestDto.Buyer.builder().email(appointment.getAppUser().getEmail()).firstName(appointment.getAppUser().getName()).lastName(appointment.getAppUser().getSurname()).language("pl").build()).build();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -93,15 +82,10 @@ public class PayUServiceImpl implements PayUService {
         HttpEntity<PayUOrderCreateRequestDto> request = new HttpEntity<>(requestDto, headers);
 
         try {
-            ResponseEntity<PayUOrderResponseDto> response = restTemplate.postForEntity(
-                    payuBaseUrl + "/api/v2_1/orders",
-                    request,
-                    PayUOrderResponseDto.class
-            );
+            ResponseEntity<PayUOrderResponseDto> response = restTemplate.postForEntity(payuBaseUrl + "/api/v2_1/orders", request, PayUOrderResponseDto.class);
 
             PayUOrderResponseDto responseBody = response.getBody();
-            boolean isSuccessStatus = response.getStatusCode().is2xxSuccessful() ||
-                    response.getStatusCode().value() == 302;
+            boolean isSuccessStatus = response.getStatusCode().is2xxSuccessful() || response.getStatusCode().value() == 302;
 
             if (isSuccessStatus && responseBody != null && responseBody.getStatus().getStatusCode().equals("SUCCESS")) {
 
@@ -116,6 +100,34 @@ public class PayUServiceImpl implements PayUService {
             payment.setStatus("FAILED");
             paymentRepository.save(payment);
             throw new RuntimeException("Failed to initiate PayU order", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void handleNotification(String payload) {
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(payload);
+
+            String orderId = root.path("order").path("orderId").asText();
+            String status = root.path("order").path("status").asText();
+
+            Payment payment = paymentRepository.findByTransactionId(orderId).orElseThrow(() -> new RuntimeException("Payment not found"));
+
+            if ("COMPLETED".equals(status)) {
+                payment.setStatus("COMPLETED");
+                payment.setPaidAt(java.time.LocalDateTime.now());
+                paymentRepository.save(payment);
+            } else if ("CANCELED".equals(status)) {
+                payment.setStatus("CANCELED");
+                paymentRepository.save(payment);
+            } else if ("PENDING".equals(status)) {
+                payment.setStatus("PENDING");
+                paymentRepository.save(payment);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error handling notification", e);
         }
     }
 

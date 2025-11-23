@@ -14,6 +14,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { GoogleCalendarService, GoogleCalendarSyncStatus } from '../../services/google-calendar.service';
+import { PaymentService } from '../../services/payment.service';
 import { AppointmentResponseDto } from '../../interfaces/appointment.dto';
 import { RescheduleDialogComponent } from './reschedule-dialog/reschedule-dialog.component';
 import { CancelConfirmDialogComponent } from './cancel-confirm-dialog/cancel-confirm-dialog.component';
@@ -47,6 +48,7 @@ export class UserDashboardComponent implements OnInit {
   appointments = signal<AppointmentWithSyncStatus[]>([]);
   isLoading = signal(true);
   selectedTab = signal(0);
+  isProcessingPayment = signal<number | null>(null);
 
   // Google Calendar sync status
   calendarSyncStatus = signal<GoogleCalendarSyncStatus>({
@@ -69,6 +71,7 @@ export class UserDashboardComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private googleCalendarService: GoogleCalendarService,
+    private paymentService: PaymentService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router
@@ -253,5 +256,24 @@ export class UserDashboardComponent implements OnInit {
 
   goToSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  getPaymentStatusIcon(status: string | undefined): string {
+    if (status === 'COMPLETED') return 'check_circle';
+    if (status === 'PENDING') return 'hourglass_empty';
+    return 'money_off';
+  }
+
+  payForAppointment(appointment: AppointmentResponseDto): void {
+    this.isProcessingPayment.set(appointment.appointmentId);
+    this.paymentService.createOrder(appointment.appointmentId).subscribe({
+      next: (res) => {
+        if (res.success && res.data.redirectUri) window.location.href = res.data.redirectUri;
+      },
+      error: () => {
+        this.snackBar.open('Payment failed', 'Close');
+        this.isProcessingPayment.set(null);
+      }
+    });
   }
 }

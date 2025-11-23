@@ -63,6 +63,12 @@
                       <mat-icon class="chip-icon">{{ getStatusIcon(appointment.status) }}</mat-icon>
                       {{ appointment.status }}
                     </mat-chip>
+                    @if (appointment.paymentStatus && appointment.paymentStatus !== 'UNPAID') {
+                      <mat-chip class="payment-chip" [class.paid]="appointment.paymentStatus === 'COMPLETED'">
+                        <mat-icon>{{ getPaymentStatusIcon(appointment.paymentStatus) }}</mat-icon>
+                        {{ appointment.paymentStatus }}
+                      </mat-chip>
+                    }
                   </div>
 
                   <div class="card-header">
@@ -139,6 +145,21 @@
                   <mat-divider></mat-divider>
 
                   <div class="card-actions">
+                    @if ((appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && appointment.paymentStatus !== 'COMPLETED') {
+                      <button mat-raised-button
+                              color="primary"
+                              class="action-button pay-now-btn"
+                              (click)="payForAppointment(appointment)"
+                              [disabled]="isProcessingPayment() === appointment.appointmentId">
+                        @if (isProcessingPayment() === appointment.appointmentId) {
+                          <mat-spinner diameter="18"></mat-spinner>
+                        } @else {
+                          <mat-icon>credit_card</mat-icon>
+                        }
+                        <span>{{ isProcessingPayment() === appointment.appointmentId ? 'Processing...' : 'Pay Now' }}</span>
+                      </button>
+                    }
+
                     @if (canSyncToCalendar(appointment)) {
                       <button mat-stroked-button
                               class="action-button calendar-sync-btn"

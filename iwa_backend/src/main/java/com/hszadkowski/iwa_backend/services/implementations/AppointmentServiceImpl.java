@@ -468,6 +468,9 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private AppointmentResponseDto mapToResponseDto(Appointment appointment) {
+
+        String paymentStatus = (appointment.getPayment() != null) ? appointment.getPayment().getStatus() : "UNPAID";
+
         return new AppointmentResponseDto(
                 appointment.getAppointmentId(),
                 appointment.getAppUser().getAppUserId(),
@@ -480,7 +483,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getStatus().getName(),
                 appointment.getLocation(),
                 appointment.getScheduledAt(),
-                appointment.getDescription()
+                appointment.getDescription(),
+                paymentStatus
         );
     }
 }
