@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -53,95 +54,108 @@ public class SecurityDevConfig {
     private String googleRedirectUri;
 
     private final MakeUpUserDetailsService makeUpUserDetailsService;
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, AuthenticationProvider authenticationProvider) throws Exception {
-                http
-                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                                                .requestMatchers("/h2-console/**", "/register", "/register/facebook",
-                                                                "/api/auth/**", "/user-already-exist",
-                                                                "/invalidSession",
-                                                                "/api/payments/notify",
-                                                                "/actuator/health", "/actuator/info")
-                                                .permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**")
-                                                .permitAll()
-                                                .requestMatchers(HttpMethod.GET, "/api/appointments").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.PUT, "/api/appointments/*/status").hasRole("ADMIN")
-                                                .requestMatchers(HttpMethod.GET, "/api/availability", "/api/availability/service/**", "/api/availability/*/check", "/api/availability/*/can-book").permitAll()
-                                                .anyRequest().authenticated())
-                                .headers(headers -> headers
-                                                .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
-                                .authenticationProvider(authenticationProvider)
-                                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                                .httpBasic(Customizer.withDefaults())
-                                .formLogin(Customizer.withDefaults());
-                return http.build();
-        }
 
-        @Bean
-        public CorsConfigurationSource corsConfigurationSource() {
-                CorsConfiguration configuration = new CorsConfiguration();
-                configuration.setAllowedOriginPatterns(Arrays.asList(
-                    "http://localhost:*",
-                    "https://localhost:*",
-                    "https://*.ngrok-free.app",  // ngrok domains
-                    "https://*.ngrok.io",         // legacy ngrok domains
-                    "https://*.ngrok.app"         // alternative ngrok domains
-                ));
-                configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-                configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "OpenPayU-Signature"));
-                configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
-                configuration.setAllowCredentials(true);
-                configuration.setMaxAge(3600L); // Cache preflight response for 1 hour
+    @Bean
+    @Order(1)
+    public SecurityFilterChain payuFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/api/payments/notify")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        return http.build();
+    }
 
-                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-                source.registerCorsConfiguration("/**", configuration);
+    @Bean
+    @Order(2)
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, AuthenticationProvider authenticationProvider) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(sessionConfig -> sessionConfig.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/h2-console/**", "/register", "/register/facebook",
+                                "/api/auth/**", "/user-already-exist",
+                                "/invalidSession",
+                                "/actuator/health", "/actuator/info", "/api/payments/notify")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/availability", "/api/availability/service/**", "/api/availability/*/check", "/api/availability/*/can-book").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/appointments").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/*/status").hasRole("ADMIN")
+                        .anyRequest().authenticated())
+                .headers(headers -> headers
+                        .frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .httpBasic(Customizer.withDefaults());
+        return http.build();
+    }
 
-                return source;
-        }
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "https://localhost:*",
+                "https://*.ngrok-free.app",
+                "https://*.ngrok.io",
+                "https://*.ngrok.app",
+                "https://secure.snd.payu.com",
+                "https://secure.payu.com"
+        ));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-                return PasswordEncoderFactories.createDelegatingPasswordEncoder();
-        }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
 
-        @Bean
-        AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-                return config.getAuthenticationManager();
-        }
+        return source;
+    }
 
-        @Bean
-        AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
-                DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-                authProvider.setUserDetailsService(makeUpUserDetailsService);
-                authProvider.setPasswordEncoder(passwordEncoder);
-                return authProvider;
-        }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
 
-        @Bean
-        ClientRegistrationRepository clientRegistrationRepository() {
-                ClientRegistration google = googleClientRegistration();
-                ClientRegistration facebook = facebookClientRegistration();
-                return new InMemoryClientRegistrationRepository(facebook, google);
-        }
+    @Bean
+    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 
-        private ClientRegistration googleClientRegistration() {
-                return CommonOAuth2Provider.GOOGLE.getBuilder("google")
-                        .clientId(googleClientId)
-                        .clientSecret(googleClientSecret)
-                        .redirectUri(googleRedirectUri)
-                        .scope("openid", "profile", "email", "https://www.googleapis.com/auth/calendar")
-                        .build();
-        }
+    @Bean
+    AuthenticationProvider authenticationProvider(PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(makeUpUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder);
+        return authProvider;
+    }
 
-        private ClientRegistration facebookClientRegistration() {
-                return CommonOAuth2Provider.FACEBOOK.getBuilder("facebook")
-                        .clientId(facebookAppId)
-                        .clientSecret(facebookAppSecret)
-                        .build();
-        }
+    @Bean
+    ClientRegistrationRepository clientRegistrationRepository() {
+        ClientRegistration google = googleClientRegistration();
+        ClientRegistration facebook = facebookClientRegistration();
+        return new InMemoryClientRegistrationRepository(facebook, google);
+    }
+
+    private ClientRegistration googleClientRegistration() {
+        return CommonOAuth2Provider.GOOGLE.getBuilder("google")
+                .clientId(googleClientId)
+                .clientSecret(googleClientSecret)
+                .redirectUri(googleRedirectUri)
+                .scope("openid", "profile", "email", "https://www.googleapis.com/auth/calendar")
+                .build();
+    }
+
+    private ClientRegistration facebookClientRegistration() {
+        return CommonOAuth2Provider.FACEBOOK.getBuilder("facebook")
+                .clientId(facebookAppId)
+                .clientSecret(facebookAppSecret)
+                .build();
+    }
 }
