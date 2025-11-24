@@ -1,1 +1,19 @@
 /.idea/
+
+# Environment files
+.env
+.env.local
+.env.docker
+*.env
+
+# Keep only example files
+!.env.docker.example
+
+# Docker
+docker-compose.override.yml
+
+# Logs
+*.log
+logs/
+
+

@@ -17,7 +17,8 @@ public class PaymentController {
     private final PayUService payUService;
 
     @PostMapping("/create-order/{appointmentId}")
-    @PreAuthorize("isAuthenticated()") // later check if the logged in user owns the appointment they are trying to pay for
+    @PreAuthorize("isAuthenticated()")
+    // later check if the logged in user owns the appointment they are trying to pay for
     public ResponseEntity<ApiResponse<PaymentInitiationDto>> createOrder(
             @PathVariable Integer appointmentId,
             HttpServletRequest request) {
@@ -25,13 +26,13 @@ public class PaymentController {
         String clientIp = request.getRemoteAddr();
         PaymentInitiationDto responseDto = payUService.createOrder(appointmentId, clientIp);
 
-
         return ResponseEntity.ok(ApiResponse.success("Order created", responseDto));
     }
 
-    @PostMapping("/notify") // TODO: after installing ngrok -> verify OpenPayU-Signature header against second_key
-    public ResponseEntity<Void> handleNotification(@RequestBody String payload) {
-        payUService.handleNotification(payload);
+    @PostMapping("/notify")
+    public ResponseEntity<Void> handleNotification(@RequestBody String payload,
+                                                   @RequestHeader(value = "OpenPayU-Signature", required = false) String signature) {
+        payUService.handleNotification(payload, signature);
         return ResponseEntity.ok().build();
     }
 }

@@ -44,7 +44,9 @@ CREATE TABLE "public"."payments" (
                                      "app_user_id" integer NOT NULL,
                                      "amount" decimal NOT NULL,
                                      "status" varchar NOT NULL,
-                                     "paid_at" date NOT NULL,
+                                     "transaction_id" varchar UNIQUE,
+                                     "paid_at" timestamp,
+                                     "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
                                      CONSTRAINT fk_payments_appointment FOREIGN KEY ("appointment_id") REFERENCES "public"."appointments"("appointment_id"),
                                      CONSTRAINT fk_payments_user FOREIGN KEY ("app_user_id") REFERENCES "public"."app_users"("app_user_id")
 );
@@ -87,8 +89,8 @@ CREATE TABLE "public"."calendar_tokens" (
                                             "app_user_id" integer NOT NULL,
                                             "provider" varchar NOT NULL,
                                             "access_token" text NOT NULL,
-                                            "refresh_token" text NOT NULL,
-                                            "expires_at" timestamp NOT NULL,
+                                            "refresh_token" text,
+                                            "expires_at" timestamp,
                                             "email" varchar,
                                             CONSTRAINT fk_calendar_tokens_user FOREIGN KEY ("app_user_id") REFERENCES "public"."app_users"("app_user_id")
 );

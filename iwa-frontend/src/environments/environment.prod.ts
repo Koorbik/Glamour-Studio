@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: '/api', // Update this with your production API URL (e.g., 'https://your-domain.com/api')
-  googleClientId: '407408718192.apps.googleusercontent.com', // This should be your production client ID
-  googleRedirectUri: 'https://your-domain.com/settings', // Update with your production domain
+  apiUrl: 'http://localhost:8080/api',
+  googleClientId: '66356487422-kahggdcf3joaoml4knsoh7l9pr5uokru.apps.googleusercontent.com',
+  googleRedirectUri: 'http://localhost:4200/settings',
   googleCalendarScope: 'https://www.googleapis.com/auth/calendar.events'
 };

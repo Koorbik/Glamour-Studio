@@ -13,6 +13,7 @@ import com.hszadkowski.iwa_backend.repos.AppointmentRepository;
 import com.hszadkowski.iwa_backend.repos.PaymentRepository;
 import com.hszadkowski.iwa_backend.services.interfaces.PayUService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -20,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
@@ -29,6 +31,7 @@ import java.util.Collections;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PayUServiceImpl implements PayUService {
 
     private final RestTemplate restTemplate;
@@ -47,6 +50,9 @@ public class PayUServiceImpl implements PayUService {
     private String notifyUrl;
     @Value("${payu.continue-url}")
     private String continueUrl;
+
+    @Value("${payu.second-key-md5}")
+    private String secondKeyMd5;
 
     @Override
     @Transactional
@@ -105,7 +111,10 @@ public class PayUServiceImpl implements PayUService {
 
     @Override
     @Transactional
-    public void handleNotification(String payload) {
+    public void handleNotification(String payload, String signatureHeader) {
+        // 1. Verify Signature
+        verifySignature(payload, signatureHeader);
+
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode root = objectMapper.readTree(payload);
@@ -113,7 +122,10 @@ public class PayUServiceImpl implements PayUService {
             String orderId = root.path("order").path("orderId").asText();
             String status = root.path("order").path("status").asText();
 
-            Payment payment = paymentRepository.findByTransactionId(orderId).orElseThrow(() -> new RuntimeException("Payment not found"));
+            Payment payment = paymentRepository.findByTransactionId(orderId)
+                    .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+            log.info("Updating payment {} status to {}", orderId, status);
 
             if ("COMPLETED".equals(status)) {
                 payment.setStatus("COMPLETED");
@@ -128,6 +140,33 @@ public class PayUServiceImpl implements PayUService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Error handling notification", e);
+        }
+    }
+
+    private void verifySignature(String payload, String signatureHeader) {
+        if (signatureHeader == null) {
+            throw new SecurityException("Missing OpenPayU-Signature header");
+        }
+
+        String incomingSignature = null;
+        String[] parts = signatureHeader.split(";");
+        for (String part : parts) {
+            String[] kv = part.trim().split("=");
+            if (kv.length == 2 && "signature".equalsIgnoreCase(kv[0])) {
+                incomingSignature = kv[1];
+            }
+        }
+
+        if (incomingSignature == null) {
+            throw new SecurityException("Signature not found in header");
+        }
+
+        String dataToHash = payload + secondKeyMd5;
+        String expectedSignature = DigestUtils.md5DigestAsHex(dataToHash.getBytes());
+
+        if (!incomingSignature.equalsIgnoreCase(expectedSignature)) {
+                        log.error("Signature Mismatch detected during PayU notification verification.");
+            throw new SecurityException("Invalid PayU Signature");
         }
     }
 

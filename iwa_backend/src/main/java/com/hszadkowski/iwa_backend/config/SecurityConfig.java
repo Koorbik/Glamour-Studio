@@ -66,7 +66,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow all OPTIONS requests for CORS preflight
                         .requestMatchers("/h2-console/**", "/register", "/register/facebook", 
                                 "/api/auth/**",
-                                "/user-already-exist", "/invalidSession")
+                                "/user-already-exist", "/invalidSession",
+                                "/api/payments/notify", // PayU webhook endpoint
+                                "/actuator/health", "/actuator/info") // Health check endpoint
                         .permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**")
                         .permitAll()
@@ -86,9 +88,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://localhost:*"));
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:*",
+            "https://localhost:*",
+            "https://*.ngrok-free.app",  // ngrok domains
+            "https://*.ngrok.io",         // legacy ngrok domains
+            "https://*.ngrok.app"         // alternative ngrok domains
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "OpenPayU-Signature"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L); // Cache preflight response for 1 hour
