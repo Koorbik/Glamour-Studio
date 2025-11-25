@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hszadkowski.iwa_backend.dto.payment.PaymentInitiationDto;
 import com.hszadkowski.iwa_backend.dto.payu.PayUOrderCreateRequestDto;
 import com.hszadkowski.iwa_backend.dto.payu.PayUOrderResponseDto;
+import com.hszadkowski.iwa_backend.dto.payu.PayURefundRequestDto;
 import com.hszadkowski.iwa_backend.dto.payu.PayUTokenResponseDto;
 import com.hszadkowski.iwa_backend.exceptions.AppointmentNotFoundException;
 import com.hszadkowski.iwa_backend.models.Appointment;
@@ -184,5 +185,42 @@ public class PayUServiceImpl implements PayUService {
         ResponseEntity<PayUTokenResponseDto> response = restTemplate.postForEntity(authUrl, request, PayUTokenResponseDto.class);
         if (response.getBody() == null) throw new RuntimeException("Auth failed");
         return response.getBody();
+    }
+
+    @Override
+    public void refundTransaction(String orderId, BigDecimal amount, String description) {
+        try {
+            PayUTokenResponseDto token = getAuthToken();
+
+            // PayU expects amount in pennies (integer)
+            int amountInPennies = amount.multiply(new BigDecimal(100)).intValue();
+
+            PayURefundRequestDto refundRequest = PayURefundRequestDto.builder()
+                    .refund(PayURefundRequestDto.Refund.builder()
+                            .description(description)
+                            .amount(amountInPennies)
+                            .build())
+                    .build();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(token.getAccessToken());
+
+            HttpEntity<PayURefundRequestDto> request = new HttpEntity<>(refundRequest, headers);
+
+            String refundUrl = payuBaseUrl + "/api/v2_1/orders/" + orderId + "/refunds";
+
+            ResponseEntity<String> response = restTemplate.postForEntity(refundUrl, request, String.class);
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                throw new RuntimeException("PayU Refund Failed: " + response.getStatusCode());
+            }
+
+            log.info("Refund initiated successfully for order {}", orderId);
+
+        } catch (Exception e) {
+            log.error("Error processing refund for order {}: {}", orderId, e.getMessage());
+            throw new RuntimeException("Failed to process refund", e);
+        }
     }
 }

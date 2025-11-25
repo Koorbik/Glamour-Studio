@@ -143,6 +143,14 @@ export class UserDashboardComponent implements OnInit {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
+  isWithin24Hours(date: string): boolean {
+    const now = new Date();
+    const appointmentDate = new Date(date);
+    const diffMs = appointmentDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours < 24;
+  }
+
   canCancel(appointment: AppointmentResponseDto): boolean {
     return appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
   }
@@ -153,12 +161,11 @@ export class UserDashboardComponent implements OnInit {
 
   canSyncToCalendar(appointment: AppointmentWithSyncStatus): boolean {
     return this.calendarSyncStatus().syncEnabled &&
-           !appointment.calendarEventId &&
-           (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED');
+      !appointment.calendarEventId &&
+      (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED');
   }
 
   syncAppointmentToCalendar(appointment: AppointmentWithSyncStatus): void {
-    // Update local state to show syncing
     const appointments = this.appointments();
     const index = appointments.findIndex(a => a.appointmentId === appointment.appointmentId);
     if (index !== -1) {
@@ -168,7 +175,6 @@ export class UserDashboardComponent implements OnInit {
 
     this.googleCalendarService.syncAppointment(appointment.appointmentId).subscribe({
       next: (response) => {
-        // Update appointment with calendar event ID
         const updatedAppointments = this.appointments();
         const idx = updatedAppointments.findIndex(a => a.appointmentId === appointment.appointmentId);
         if (idx !== -1) {
@@ -188,7 +194,6 @@ export class UserDashboardComponent implements OnInit {
         });
       },
       error: (err) => {
-        // Reset syncing state on error
         const appointments = this.appointments();
         const index = appointments.findIndex(a => a.appointmentId === appointment.appointmentId);
         if (index !== -1) {

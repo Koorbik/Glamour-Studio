@@ -6,19 +6,16 @@ import com.hszadkowski.iwa_backend.dto.appointment.RescheduleAppointmentDto;
 import com.hszadkowski.iwa_backend.dto.appointment.UpdateAppointmentStatusDto;
 import com.hszadkowski.iwa_backend.exceptions.AppointmentNotFoundException;
 import com.hszadkowski.iwa_backend.models.*;
-import com.hszadkowski.iwa_backend.repos.AppointmentRepository;
-import com.hszadkowski.iwa_backend.repos.AppointmentStatusRepository;
-import com.hszadkowski.iwa_backend.repos.AvailabilitySlotRepository;
-import com.hszadkowski.iwa_backend.repos.UserRepository;
-import com.hszadkowski.iwa_backend.services.interfaces.AppointmentService;
-import com.hszadkowski.iwa_backend.services.interfaces.AvailabilityService;
-import com.hszadkowski.iwa_backend.services.interfaces.EmailService;
-import com.hszadkowski.iwa_backend.services.interfaces.GoogleCalendarService;
+import com.hszadkowski.iwa_backend.repos.*;
+import com.hszadkowski.iwa_backend.services.interfaces.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +34,8 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AvailabilityService availabilityService;
     private final EmailService emailService;
     private final GoogleCalendarService googleCalendarService;
+    private final PayUService payUService;
+    private final PaymentRepository paymentRepository;
 
     @Override
     public AppointmentResponseDto bookAppointment(BookAppointmentDto request, String userEmail) {
@@ -189,6 +188,11 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new AccessDeniedException("You can only cancel your own appointments");
         }
 
+        Payment payment = appointment.getPayment();
+        if (payment != null && "COMPLETED".equals(payment.getStatus())) {
+            handleRefund(appointment, payment);
+        }
+
         AppointmentStatus cancelledStatus = appointmentStatusRepository.findByName("CANCELLED")
                 .orElseThrow(() -> new RuntimeException("Cancelled status not found"));
 
@@ -201,6 +205,55 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         // Delete from Google Calendar of the appointment owner
         syncAppointmentToGoogleCalendar(appointment, appointment.getAppUser().getEmail(), "delete");
+    }
+
+    private void handleRefund(Appointment appointment, Payment payment) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime appointmentTime = appointment.getSlot().getStartTime();
+
+            long hoursDifference = ChronoUnit.HOURS.between(now, appointmentTime);
+
+            BigDecimal refundAmount;
+            String description;
+            String paymentStatusUpdate;
+
+            if (hoursDifference >= 24) {
+                // Full refund
+                refundAmount = payment.getAmount();
+                description = "Full refund for cancellation (>24h before appointment)";
+                paymentStatusUpdate = "REFUNDED";
+            } else {
+                // 50% refund
+                refundAmount = payment.getAmount().multiply(new BigDecimal("0.5"));
+                description = "50% refund for late cancellation (<24h before appointment)";
+                paymentStatusUpdate = "PARTIALLY_REFUNDED";
+            }
+
+            payUService.refundTransaction(payment.getTransactionId(), refundAmount, description);
+
+            payment.setStatus(paymentStatusUpdate);
+            paymentRepository.save(payment);
+
+            log.info("Processed refund for appointment {}: {} ({})",
+                    appointment.getAppointmentId(), refundAmount, description);
+
+            sendRefundEmail(appointment, refundAmount, description);
+
+        } catch (Exception e) {
+            log.error("Failed to process refund for appointment {}: {}",
+                    appointment.getAppointmentId(), e.getMessage());
+        }
+    }
+
+    private void sendRefundEmail(Appointment appointment, BigDecimal amount, String reason) {
+        try {
+            String subject = "Refund Processed - " + appointment.getService().getName();
+            String htmlMessage = buildRefundEmailHtml(appointment, amount, reason);
+            emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
+        } catch (Exception e) {
+            log.error("Failed to send refund email: {}", e.getMessage());
+        }
     }
 
     @Override
@@ -462,6 +515,25 @@ public class AppointmentServiceImpl implements AppointmentService {
                 + "</div>"
                 + "<div style=\"margin-top: 15px;\">" + calendarSync + "</div>"
                 + "<p style=\"font-size: 14px; margin-top: 20px;\">We're sorry to see you go! Feel free to book another appointment anytime.</p>"
+                + "</div>"
+                + "</body>"
+                + "</html>";
+    }
+
+    private String buildRefundEmailHtml(Appointment appointment, BigDecimal amount, String reason) {
+        return "<html>"
+                + "<body style=\"font-family: Arial, sans-serif;\">"
+                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
+                + "<h2 style=\"color: #333;\">Refund Processed</h2>"
+                + "<p style=\"font-size: 16px;\">A refund has been initiated for your cancelled appointment.</p>"
+                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
+                + "<h3 style=\"color: #333;\">Refund Details:</h3>"
+                + "<p><strong>Service:</strong> " + appointment.getService().getName() + "</p>"
+                + "<p><strong>Original Date:</strong> " + appointment.getScheduledAt() + "</p>"
+                + "<p><strong>Refund Amount:</strong> $" + amount + "</p>"
+                + "<p><strong>Reason:</strong> " + reason + "</p>"
+                + "</div>"
+                + "<p style=\"font-size: 14px; margin-top: 20px;\">Please allow 3-5 business days for the funds to appear in your account.</p>"
                 + "</div>"
                 + "</body>"
                 + "</html>";

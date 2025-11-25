@@ -2,6 +2,9 @@
   width: 100%;
   max-width: 500px;
   min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh; // Limit height to viewport
 
   @media (max-width: 576px) {
     max-width: 95vw;
@@ -12,6 +15,7 @@
 .dialog-header {
   text-align: center;
   padding: 2rem 2rem 1rem;
+  flex-shrink: 0; // Prevent header from shrinking
 
   .icon-wrapper {
     width: 80px;
@@ -42,8 +46,11 @@
   }
 }
 
+// Updated content styling for single scroll
 .dialog-content {
   padding: 0 2rem 2rem !important;
+  overflow-y: auto; // Allow scrolling only here
+  flex-grow: 1; // Allow content to fill available space
 }
 
 .confirmation-text {
@@ -168,6 +175,7 @@
   display: flex;
   gap: 1rem;
   justify-content: center;
+  flex-shrink: 0; // Prevent actions from shrinking
 
   button {
     min-width: 140px;
@@ -308,18 +316,21 @@
   .mat-mdc-dialog-container {
     border-radius: 16px !important;
     padding: 0 !important;
-    max-height: 95vh !important;
-    overflow-y: auto !important;
+    // Removed overflows from container to fix double scroll
+    // overflow-y: auto !important;
 
     @media (max-width: 576px) {
       border-radius: 12px !important;
       margin: 8px !important;
       max-width: calc(100vw - 16px) !important;
-      max-height: calc(100vh - 16px) !important;
+      // max-height: calc(100vh - 16px) !important;
     }
   }
 
   .mat-mdc-dialog-surface {
+    display: flex !important;
+    flex-direction: column !important;
+
     @media (max-width: 576px) {
       max-width: none !important;
     }

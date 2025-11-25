@@ -183,10 +183,15 @@
                     }
 
                     @if (canReschedule(appointment)) {
-                      <button mat-stroked-button class="action-button reschedule-btn" (click)="openRescheduleDialog(appointment)">
-                        <mat-icon>update</mat-icon>
-                        <span>Reschedule</span>
-                      </button>
+                      <div class="reschedule-wrapper" [matTooltip]="isWithin24Hours(appointment.scheduledAt) ? 'For last minute changes, please contact the makeup artist directly.' : ''">
+                        <button mat-stroked-button
+                                class="action-button reschedule-btn"
+                                (click)="openRescheduleDialog(appointment)"
+                                [disabled]="isWithin24Hours(appointment.scheduledAt)">
+                          <mat-icon>update</mat-icon>
+                          <span>Reschedule</span>
+                        </button>
+                      </div>
                     }
 
                     @if (canCancel(appointment)) {
@@ -203,6 +208,13 @@
                       </button>
                     }
                   </div>
+
+                  @if (isWithin24Hours(appointment.scheduledAt)) {
+                    <div class="late-action-notice">
+                      <mat-icon>info</mat-icon>
+                      <span>Appointment is within 24 hours. Rescheduling online is disabled. Please contact the makeup artist individually for special cases.</span>
+                    </div>
+                  }
                 </mat-card>
               }
             </div>
