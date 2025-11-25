@@ -3,10 +3,56 @@ services:
     build:
       context: ./db
       dockerfile: Dockerfile
-    env_file: "iwa_backend/makeUpServiceDB.env"
+    env_file:
+      - .env.docker
     ports:
       - "5432:5432"
     volumes:
       - postgres_make_up_service_data:/var/lib/postgresql/data
+    networks:
+      - iwa-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iwa_user -d make_up_service_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  iwa_backend:
+    build:
+      context: ./iwa_backend
+      dockerfile: Dockerfile
+    env_file:
+      - .env.docker
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      make_up_service_db:
+        condition: service_healthy
+    networks:
+      - iwa-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  iwa_frontend:
+    build:
+      context: ./iwa-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - iwa_backend
+    networks:
+      - iwa-network
+
 volumes:
   postgres_make_up_service_data:
+
+networks:
+  iwa-network:
+    driver: bridge

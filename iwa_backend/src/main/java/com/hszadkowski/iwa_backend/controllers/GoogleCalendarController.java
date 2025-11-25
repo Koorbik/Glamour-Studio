@@ -1,6 +1,8 @@
 package com.hszadkowski.iwa_backend.controllers;
 
-import com.hszadkowski.iwa_backend.dto.*;
+import com.hszadkowski.iwa_backend.dto.auth.GoogleAuthCodeDto;
+import com.hszadkowski.iwa_backend.dto.calendar.CalendarTokenResponseDto;
+import com.hszadkowski.iwa_backend.dto.calendar.GoogleCalendarEventDto;
 import com.hszadkowski.iwa_backend.services.interfaces.GoogleCalendarService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

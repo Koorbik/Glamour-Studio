@@ -1,6 +1,6 @@
 package com.hszadkowski.iwa_backend.controllers;
 
-import com.hszadkowski.iwa_backend.dto.*;
+import com.hszadkowski.iwa_backend.dto.auth.*;
 import com.hszadkowski.iwa_backend.models.AppUser;
 import com.hszadkowski.iwa_backend.repos.UserRepository;
 import com.hszadkowski.iwa_backend.services.interfaces.AuthenticationService;

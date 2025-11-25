@@ -1,9 +1,8 @@
 package com.hszadkowski.iwa_backend.services.interfaces;
 
-import com.hszadkowski.iwa_backend.dto.CalendarTokenResponseDto;
-import com.hszadkowski.iwa_backend.dto.GoogleCalendarEventDto;
+import com.hszadkowski.iwa_backend.dto.calendar.CalendarTokenResponseDto;
+import com.hszadkowski.iwa_backend.dto.calendar.GoogleCalendarEventDto;
 import com.hszadkowski.iwa_backend.models.Appointment;
-import com.hszadkowski.iwa_backend.models.AppUser;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;

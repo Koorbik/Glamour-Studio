@@ -1,6 +1,6 @@
 package com.hszadkowski.iwa_backend.services.implementations;
 
-import com.hszadkowski.iwa_backend.dto.GoogleUserDto;
+import com.hszadkowski.iwa_backend.dto.auth.GoogleUserDto;
 import com.hszadkowski.iwa_backend.services.interfaces.GoogleAuthService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

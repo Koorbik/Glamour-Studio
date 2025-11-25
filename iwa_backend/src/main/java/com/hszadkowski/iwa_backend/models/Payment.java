@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "payments")
@@ -28,7 +29,10 @@ public class Payment {
     @JoinColumn(name = "app_user_id")
     private AppUser appUser;
 
+    @Column(name = "transaction_id")
+    private String transactionId;
+
     private BigDecimal amount;
     private String status;
-    private LocalDate paidAt;
+    private LocalDateTime paidAt;
 }

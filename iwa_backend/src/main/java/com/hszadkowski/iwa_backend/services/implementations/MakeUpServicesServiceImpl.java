@@ -1,7 +1,7 @@
 package com.hszadkowski.iwa_backend.services.implementations;
 
-import com.hszadkowski.iwa_backend.dto.CreateOrUpdateServiceDto;
-import com.hszadkowski.iwa_backend.dto.ServiceResponseDto;
+import com.hszadkowski.iwa_backend.dto.service.CreateOrUpdateServiceDto;
+import com.hszadkowski.iwa_backend.dto.service.ServiceResponseDto;
 import com.hszadkowski.iwa_backend.exceptions.ServiceDoesNotExistException;
 import com.hszadkowski.iwa_backend.models.Service;
 import com.hszadkowski.iwa_backend.repos.ServiceRepository;

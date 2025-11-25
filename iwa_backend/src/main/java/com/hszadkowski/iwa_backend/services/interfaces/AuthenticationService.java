@@ -1,6 +1,6 @@
 package com.hszadkowski.iwa_backend.services.interfaces;
 
-import com.hszadkowski.iwa_backend.dto.*;
+import com.hszadkowski.iwa_backend.dto.auth.*;
 import com.hszadkowski.iwa_backend.models.AppUser;
 
 public interface AuthenticationService {

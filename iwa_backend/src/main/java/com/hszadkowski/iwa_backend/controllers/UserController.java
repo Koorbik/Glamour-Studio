@@ -1,10 +1,10 @@
 package com.hszadkowski.iwa_backend.controllers;
 
-import com.hszadkowski.iwa_backend.dto.CalendarSyncStatusDto;
-import com.hszadkowski.iwa_backend.dto.CalendarTokenResponseDto;
-import com.hszadkowski.iwa_backend.dto.GoogleCalendarTokenDto;
-import com.hszadkowski.iwa_backend.dto.UserProfileDto;
-import com.hszadkowski.iwa_backend.dto.UserProfileUpdateDto;
+import com.hszadkowski.iwa_backend.dto.calendar.CalendarSyncStatusDto;
+import com.hszadkowski.iwa_backend.dto.calendar.CalendarTokenResponseDto;
+import com.hszadkowski.iwa_backend.dto.calendar.GoogleCalendarTokenDto;
+import com.hszadkowski.iwa_backend.dto.user.UserProfileDto;
+import com.hszadkowski.iwa_backend.dto.user.UserProfileUpdateDto;
 import com.hszadkowski.iwa_backend.exceptions.UserAlreadyExistsException;
 import com.hszadkowski.iwa_backend.models.AppUser;
 import com.hszadkowski.iwa_backend.services.interfaces.GoogleCalendarService;

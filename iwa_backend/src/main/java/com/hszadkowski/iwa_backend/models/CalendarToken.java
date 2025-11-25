@@ -24,8 +24,15 @@ public class CalendarToken {
     private AppUser appUser;
 
     private String provider;
+
+    @Column(name = "access_token", columnDefinition = "TEXT")
     private String accessToken;
+
+    @Column(name = "refresh_token", columnDefinition = "TEXT", nullable = true)
     private String refreshToken;
+
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
+
     private String email;
 }

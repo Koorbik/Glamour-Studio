@@ -1,0 +1,87 @@
+h2 {
+  color: #2c3e50;
+  font-weight: 600;
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 1rem;
+  margin-bottom: 0;
+}
+
+mat-dialog-content {
+  padding-top: 1.5rem !important;
+  min-width: 400px;
+
+  @media (max-width: 600px) {
+    min-width: 100%;
+  }
+}
+
+.booking-summary {
+  background: linear-gradient(135deg, #f0fdf4 0%, #e6f7f0 100%);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid #d8f3dc;
+
+  .service-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(82, 183, 136, 0.2);
+
+    mat-icon {
+      color: #52b788;
+      font-size: 2rem;
+      width: 2rem;
+      height: 2rem;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 1.2rem;
+      color: #2c3e50;
+    }
+
+    .price {
+      color: #52b788;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+  }
+
+  .time-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: #5a6c7d;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+
+    mat-icon {
+      font-size: 1.2rem;
+      width: 1.2rem;
+      height: 1.2rem;
+      color: #87ceaa;
+    }
+  }
+}
+
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+mat-dialog-actions {
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+
+  button {
+    padding: 0.5rem 1.5rem;
+  }
+}

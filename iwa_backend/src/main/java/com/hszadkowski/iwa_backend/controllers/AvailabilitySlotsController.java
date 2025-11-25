@@ -1,8 +1,8 @@
 package com.hszadkowski.iwa_backend.controllers;
 
-import com.hszadkowski.iwa_backend.dto.AvailabilitySlotResponseDto;
-import com.hszadkowski.iwa_backend.dto.CreateAvailabilitySlotDto;
-import com.hszadkowski.iwa_backend.dto.GetAvailableSlotsDto;
+import com.hszadkowski.iwa_backend.dto.availability.AvailabilitySlotResponseDto;
+import com.hszadkowski.iwa_backend.dto.availability.CreateAvailabilitySlotDto;
+import com.hszadkowski.iwa_backend.dto.availability.GetAvailableSlotsDto;
 import com.hszadkowski.iwa_backend.services.interfaces.AvailabilityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

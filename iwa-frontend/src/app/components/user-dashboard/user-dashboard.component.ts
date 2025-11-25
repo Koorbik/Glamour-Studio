@@ -14,6 +14,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { GoogleCalendarService, GoogleCalendarSyncStatus } from '../../services/google-calendar.service';
+import { PaymentService } from '../../services/payment.service';
 import { AppointmentResponseDto } from '../../interfaces/appointment.dto';
 import { RescheduleDialogComponent } from './reschedule-dialog/reschedule-dialog.component';
 import { CancelConfirmDialogComponent } from './cancel-confirm-dialog/cancel-confirm-dialog.component';
@@ -47,6 +48,7 @@ export class UserDashboardComponent implements OnInit {
   appointments = signal<AppointmentWithSyncStatus[]>([]);
   isLoading = signal(true);
   selectedTab = signal(0);
+  isProcessingPayment = signal<number | null>(null);
 
   // Google Calendar sync status
   calendarSyncStatus = signal<GoogleCalendarSyncStatus>({
@@ -69,6 +71,7 @@ export class UserDashboardComponent implements OnInit {
   constructor(
     private apiService: ApiService,
     private googleCalendarService: GoogleCalendarService,
+    private paymentService: PaymentService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private router: Router
@@ -140,6 +143,14 @@ export class UserDashboardComponent implements OnInit {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
 
+  isWithin24Hours(date: string): boolean {
+    const now = new Date();
+    const appointmentDate = new Date(date);
+    const diffMs = appointmentDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+    return diffHours < 24;
+  }
+
   canCancel(appointment: AppointmentResponseDto): boolean {
     return appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED';
   }
@@ -150,12 +161,11 @@ export class UserDashboardComponent implements OnInit {
 
   canSyncToCalendar(appointment: AppointmentWithSyncStatus): boolean {
     return this.calendarSyncStatus().syncEnabled &&
-           !appointment.calendarEventId &&
-           (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED');
+      !appointment.calendarEventId &&
+      (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED');
   }
 
   syncAppointmentToCalendar(appointment: AppointmentWithSyncStatus): void {
-    // Update local state to show syncing
     const appointments = this.appointments();
     const index = appointments.findIndex(a => a.appointmentId === appointment.appointmentId);
     if (index !== -1) {
@@ -165,7 +175,6 @@ export class UserDashboardComponent implements OnInit {
 
     this.googleCalendarService.syncAppointment(appointment.appointmentId).subscribe({
       next: (response) => {
-        // Update appointment with calendar event ID
         const updatedAppointments = this.appointments();
         const idx = updatedAppointments.findIndex(a => a.appointmentId === appointment.appointmentId);
         if (idx !== -1) {
@@ -185,7 +194,6 @@ export class UserDashboardComponent implements OnInit {
         });
       },
       error: (err) => {
-        // Reset syncing state on error
         const appointments = this.appointments();
         const index = appointments.findIndex(a => a.appointmentId === appointment.appointmentId);
         if (index !== -1) {
@@ -253,5 +261,24 @@ export class UserDashboardComponent implements OnInit {
 
   goToSettings(): void {
     this.router.navigate(['/settings']);
+  }
+
+  getPaymentStatusIcon(status: string | undefined): string {
+    if (status === 'COMPLETED') return 'check_circle';
+    if (status === 'PENDING') return 'hourglass_empty';
+    return 'money_off';
+  }
+
+  payForAppointment(appointment: AppointmentResponseDto): void {
+    this.isProcessingPayment.set(appointment.appointmentId);
+    this.paymentService.createOrder(appointment.appointmentId).subscribe({
+      next: (res) => {
+        if (res.success && res.data.redirectUri) window.location.href = res.data.redirectUri;
+      },
+      error: () => {
+        this.snackBar.open('Payment failed', 'Close');
+        this.isProcessingPayment.set(null);
+      }
+    });
   }
 }

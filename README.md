@@ -39,6 +39,14 @@ A full-stack web application for booking makeup artist appointments, featuring u
 - [x] Password encryption with BCrypt
 - [x] User profile management
 
+### 💳 Payment Integration
+- [x] PayU payment gateway integration
+- [x] Secure payment order creation
+- [x] Webhook notifications with MD5 signature verification
+- [x] Payment status tracking (PENDING, COMPLETED, CANCELED)
+- [x] Automatic payment confirmation
+- [x] Integration with appointment system
+
 ### 📅 Appointment System
 - [x] Service browsing and selection
 - [x] Available time slot viewing
@@ -116,28 +124,29 @@ IWA/
 ### 🚀 Quick Start
 
 1. **Clone the repository**
-   ```bash
+   ```powershell
    git clone <repository-url>
    cd IWA
    ```
 
 2. **Configure environment variables (optional)**
-   ```bash
-   # Configure backend env file for Google OAuth (optional)
-   # Edit iwa_backend/.env with your Google OAuth credentials
+   ```powershell
+   # Create backend .env file for Google OAuth (optional)
+   # Copy .env.example if it exists, or create new .env file
    # The app works without OAuth for basic functionality
    ```
 
 3. **Start the backend**
-   ```bash
+   ```powershell
    cd iwa_backend
    ./mvnw spring-boot:run
    ```
    > 💡 The backend uses H2 in-memory database by default - no external database setup needed!
 
-4. **Start the frontend**
-   ```bash
+4. **Start the frontend** (in a new terminal)
+   ```powershell
    cd iwa-frontend
+   npm install  # First time only
    ng serve
    ```
 
@@ -145,6 +154,41 @@ IWA/
    - Frontend: http://localhost:4200
    - Backend API: http://localhost:8080
    - H2 Database Console: http://localhost:8080/h2-console (for development)
+
+### 🐳 Docker Deployment
+
+To run the application with Docker (using PostgreSQL database):
+
+1. **Create environment file**
+   ```powershell
+   # Copy the example environment file
+   cp .env.docker.example .env.docker
+   ```
+
+2. **Configure environment variables**
+   Edit `.env.docker` and fill in the required values:
+   - Database credentials
+   - JWT secret key
+   - Email configuration
+   - Google OAuth credentials (optional)
+   - PayU payment credentials (if using payment features)
+
+3. **Start the application**
+   ```powershell
+   docker-compose up --build
+   ```
+
+4. **Access the application**
+   - Frontend: http://localhost:4200
+   - Backend API: http://localhost:8080
+   - PostgreSQL Database: localhost:5432
+
+5. **Stop the application**
+   ```powershell
+   docker-compose down
+   ```
+
+> 💡 **Note:** The Docker setup uses PostgreSQL database and runs all services (frontend, backend, and database) in containers.
 
 ### 👤 Default Users
 
@@ -158,11 +202,45 @@ The application comes with pre-seeded users for testing:
 ## 🔧 Configuration
 
 ### Backend Configuration
-Key environment variables in `iwa_backend/.env`:
-- `GOOGLE_CLIENT_ID` - Google OAuth client ID
-- `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
-- `JWT_SECRET` - JWT signing secret
-- Database connection settings
+
+#### Local Development (H2 Database)
+The backend uses profile `local` by default (configured in `application.properties`).
+
+Create `iwa_backend/.env` file with:
+```bash
+# JWT
+JWT_SECRET_KEY=your_secret_key_here
+JWT_EXPIRATION=86400000
+
+# Email
+SUPPORT_EMAIL=your_email@gmail.com
+APP_PASSWORD=your_gmail_app_password
+
+# Google Calendar OAuth (optional)
+GOOGLE_CALENDAR_CLIENT_ID=your_client_id
+GOOGLE_CALENDAR_SECRET=your_client_secret
+GOOGLE_AUTH_CLIENT_ID=your_auth_client_id
+GOOGLE_AUTH_FRONTEND_CLIENT_ID=your_frontend_client_id
+
+# Facebook OAuth (optional)
+FACEBOOK_APP_ID=your_app_id
+FACEBOOK_APP_SECRET=your_app_secret
+
+# PayU Configuration (optional)
+PAYU_BASE_URL=https://secure.snd.payu.com
+PAYU_OAUTH_CLIENT_ID=your_payu_client_id
+PAYU_OAUTH_CLIENT_SECRET=your_payu_client_secret
+PAYU_POS_ID=your_payu_pos_id
+PAYU_SECOND_KEY_MD5=your_payu_second_key
+PAYU_NOTIFY_URL=http://localhost:8080/api/payments/notify
+```
+
+#### Docker Deployment (PostgreSQL)
+Docker uses profile `dev` with PostgreSQL database.
+
+1. Copy the example: `cp .env.docker.example .env.docker`
+2. Fill in all required credentials (database, JWT, email, and optionally PayU for payment features)
+3. Start: `docker-compose up --build`
 
 ### Frontend Configuration
 Environment settings in `iwa-frontend/src/environments/`:
@@ -171,11 +249,6 @@ Environment settings in `iwa-frontend/src/environments/`:
 - Production/development flags
 
 ## 🎯 Future Enhancements
-
-### 💳 Payment Integration
-- [ ] Payment processing
-- [ ] Payment confirmation system
-- [ ] Invoice generation
 
 ### 🔔 Enhanced Notifications
 - [ ] SMS notifications
