@@ -120,8 +120,11 @@ IWA/
 - **Java 21**
 - **Node.js 18+** 
 - **Maven** (or use the included wrapper)
+- **ngrok** (required for PayU webhook functionality) - [Download here](https://ngrok.com/download)
 
-### 🚀 Quick Start
+### 🚀 Quick Start (Recommended: Docker)
+
+The recommended way to run the application is using **Docker Compose**, which sets up PostgreSQL database and all services automatically.
 
 1. **Clone the repository**
    ```powershell
@@ -129,66 +132,89 @@ IWA/
    cd IWA
    ```
 
-2. **Configure environment variables (optional)**
+2. **Configure environment variables**
+   
+   Copy the example environment file:
    ```powershell
-   # Create backend .env file for Google OAuth (optional)
-   # Copy .env.example if it exists, or create new .env file
-   # The app works without OAuth for basic functionality
+   cp .env.docker.example .env.docker
    ```
+   
+   Edit `.env.docker` file with your configuration. See the [Configuration](#-configuration) section below for detailed setup instructions.
+
+3. **Start the application with Docker**
+   ```powershell
+   docker-compose up --build
+   ```
+   > 💡 This will start PostgreSQL database, backend, and frontend in containers.
+
+4. **Expose backend with ngrok (REQUIRED for PayU webhooks)** (in a new terminal)
+   ```powershell
+   ngrok http 8080
+   ```
+   
+   > ⚠️ **Important:** Copy the HTTPS forwarding URL (e.g., `https://abc123.ngrok-free.app`) and update your `PAYU_NOTIFY_URL` in the `.env.docker` file:
+   > ```
+   > PAYU_NOTIFY_URL=https://your-ngrok-url.ngrok-free.app/api/payments/notify
+   > ```
+   > Then restart the containers:
+   > ```powershell
+   > docker-compose down
+   > docker-compose up
+   > ```
+   
+   > 💡 **Why ngrok?** PayU sends payment notifications (webhooks) to your backend. Since PayU servers need to reach your local machine, ngrok creates a secure tunnel to expose your localhost:8080 to the internet.
+
+5. **Access the application**
+   - Frontend: http://localhost:4200
+   - Backend API: http://localhost:8080
+   - PostgreSQL Database: localhost:5432
+
+6. **Stop the application**
+   ```powershell
+   docker-compose down
+   ```
+
+### 🔧 Alternative: Local Development (Without Docker)
+
+If you prefer to run the backend locally without Docker (uses H2 in-memory database):
+
+1. **Set the application profile to `local`**
+   
+   Edit `iwa_backend/src/main/resources/application.properties` and ensure the active profile is set to `local`:
+   ```properties
+   spring.profiles.active=local
+   ```
+
+2. **Configure environment variables**
+   
+   Create `iwa_backend/.env` file with your configuration. See the [Configuration](#-configuration) section below for detailed setup instructions.
 
 3. **Start the backend**
    ```powershell
    cd iwa_backend
    ./mvnw spring-boot:run
    ```
-   > 💡 The backend uses H2 in-memory database by default - no external database setup needed!
+   > 💡 The backend uses H2 in-memory database with `local` profile - no external database setup needed!
 
-4. **Start the frontend** (in a new terminal)
+4. **Expose backend with ngrok (REQUIRED for PayU webhooks)** (in a new terminal)
+   ```powershell
+   ngrok http 8080
+   ```
+   
+   Update your `PAYU_NOTIFY_URL` in the `.env` file and restart the backend.
+
+5. **Start the frontend** (in a new terminal)
    ```powershell
    cd iwa-frontend
    npm install  # First time only
    ng serve
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Frontend: http://localhost:4200
    - Backend API: http://localhost:8080
-   - H2 Database Console: http://localhost:8080/h2-console (for development)
-
-### 🐳 Docker Deployment
-
-To run the application with Docker (using PostgreSQL database):
-
-1. **Create environment file**
-   ```powershell
-   # Copy the example environment file
-   cp .env.docker.example .env.docker
-   ```
-
-2. **Configure environment variables**
-   Edit `.env.docker` and fill in the required values:
-   - Database credentials
-   - JWT secret key
-   - Email configuration
-   - Google OAuth credentials (optional)
-   - PayU payment credentials (if using payment features)
-
-3. **Start the application**
-   ```powershell
-   docker-compose up --build
-   ```
-
-4. **Access the application**
-   - Frontend: http://localhost:4200
-   - Backend API: http://localhost:8080
-   - PostgreSQL Database: localhost:5432
-
-5. **Stop the application**
-   ```powershell
-   docker-compose down
-   ```
-
-> 💡 **Note:** The Docker setup uses PostgreSQL database and runs all services (frontend, backend, and database) in containers.
+   - Backend via ngrok: https://your-ngrok-url.ngrok-free.app
+   - H2 Database Console: http://localhost:8080/h2-console (for local development)
 
 ### 👤 Default Users
 
@@ -203,16 +229,63 @@ The application comes with pre-seeded users for testing:
 
 ### Backend Configuration
 
-#### Local Development (H2 Database)
-The backend uses profile `local` by default (configured in `application.properties`).
+The backend supports two profiles:
+- **`local`** - Uses H2 in-memory database (for local development without Docker)
+- **`dev`** - Uses PostgreSQL database (for Docker deployment)
 
-Create `iwa_backend/.env` file with:
+#### Docker Deployment (PostgreSQL) - RECOMMENDED
+Docker uses profile `dev` with PostgreSQL database.
+
+Copy the example environment file and edit it:
 ```bash
-# JWT
+cp .env.docker.example .env.docker
+```
+
+Then configure `.env.docker` with your values:
+```bash
+# Database Configuration
+POSTGRES_USER=user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_DB=service_db
+
+# JWT (REQUIRED)
 JWT_SECRET_KEY=your_secret_key_here
 JWT_EXPIRATION=86400000
 
-# Email
+# Email (REQUIRED)
+SUPPORT_EMAIL=your_email@gmail.com
+APP_PASSWORD=your_gmail_app_password
+
+# Google Calendar OAuth (optional)
+GOOGLE_CALENDAR_CLIENT_ID=your_client_id
+GOOGLE_CALENDAR_SECRET=your_client_secret
+GOOGLE_AUTH_CLIENT_ID=your_auth_client_id
+GOOGLE_AUTH_FRONTEND_CLIENT_ID=your_frontend_client_id
+
+# PayU Configuration (REQUIRED for payments)
+PAYU_BASE_URL=https://secure.snd.payu.com
+PAYU_OAUTH_CLIENT_ID=your_payu_client_id
+PAYU_OAUTH_CLIENT_SECRET=your_payu_client_secret
+PAYU_POS_ID=your_payu_pos_id
+PAYU_SECOND_KEY_MD5=your_payu_second_key
+# ⚠️ IMPORTANT: Use ngrok HTTPS URL here, NOT localhost!
+# Run: ngrok http 8080
+# Then copy the HTTPS URL (e.g., https://abc123.ngrok-free.app)
+PAYU_NOTIFY_URL=https://your-ngrok-url.ngrok-free.app/api/payments/notify
+```
+
+> ⚠️ **Critical for PayU Webhooks:** The `PAYU_NOTIFY_URL` MUST be a publicly accessible HTTPS URL. Run `ngrok http 8080` to create a tunnel and use the provided HTTPS URL.
+
+#### Local Development (H2 Database) - ALTERNATIVE
+The backend uses profile `local` when running locally without Docker.
+
+Create `iwa_backend/.env` file with:
+```bash
+# JWT (REQUIRED)
+JWT_SECRET_KEY=your_secret_key_here
+JWT_EXPIRATION=86400000
+
+# Email (REQUIRED)
 SUPPORT_EMAIL=your_email@gmail.com
 APP_PASSWORD=your_gmail_app_password
 
@@ -226,21 +299,21 @@ GOOGLE_AUTH_FRONTEND_CLIENT_ID=your_frontend_client_id
 FACEBOOK_APP_ID=your_app_id
 FACEBOOK_APP_SECRET=your_app_secret
 
-# PayU Configuration (optional)
+# PayU Configuration (REQUIRED for payments)
 PAYU_BASE_URL=https://secure.snd.payu.com
 PAYU_OAUTH_CLIENT_ID=your_payu_client_id
 PAYU_OAUTH_CLIENT_SECRET=your_payu_client_secret
 PAYU_POS_ID=your_payu_pos_id
 PAYU_SECOND_KEY_MD5=your_payu_second_key
-PAYU_NOTIFY_URL=http://localhost:8080/api/payments/notify
+# ⚠️ IMPORTANT: Use ngrok HTTPS URL here, NOT localhost!
+# Run: ngrok http 8080
+# Then copy the HTTPS URL (e.g., https://abc123.ngrok-free.app)
+PAYU_NOTIFY_URL=https://your-ngrok-url.ngrok-free.app/api/payments/notify
 ```
 
-#### Docker Deployment (PostgreSQL)
-Docker uses profile `dev` with PostgreSQL database.
+> ⚠️ **Critical for PayU Webhooks:** The `PAYU_NOTIFY_URL` MUST be a publicly accessible HTTPS URL. Run `ngrok http 8080` to create a tunnel and use the provided HTTPS URL.
 
-1. Copy the example: `cp .env.docker.example .env.docker`
-2. Fill in all required credentials (database, JWT, email, and optionally PayU for payment features)
-3. Start: `docker-compose up --build`
+> 💡 **Note:** H2 is an in-memory database, so all data is lost when the application stops. For persistent data, use Docker with PostgreSQL.
 
 ### Frontend Configuration
 Environment settings in `iwa-frontend/src/environments/`:
