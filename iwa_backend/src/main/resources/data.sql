@@ -42,7 +42,7 @@ VALUES ('Basic Makeup', 'Natural everyday makeup application', 60, 50.00),
 
 -- Basic Makeup slots (service_id = 1)
 INSERT INTO availability_slots (app_user_id, service_id, start_time, end_time, is_booked)
-VALUES (1, 1, '2025-11-26 09:00:00', '2025-11-26 10:00:00', false),
+VALUES (1, 1, '2025-11-29 09:00:00', '2025-11-29 10:00:00', false),
        (1, 1, '2026-01-30 09:00:00', '2026-01-30 10:00:00', false),
        (1, 1, '2026-01-30 10:30:00', '2026-01-30 11:30:00', false),
        (1, 1, '2026-02-02 14:00:00', '2026-02-02 15:00:00', false),
