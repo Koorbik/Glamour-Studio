@@ -33,6 +33,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final AvailabilityService availabilityService;
     private final EmailService emailService;
+    private final EmailTemplateService emailTemplateService;
     private final GoogleCalendarService googleCalendarService;
     private final PayUService payUService;
     private final ContractService contractService;
@@ -261,7 +262,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void sendRefundEmail(Appointment appointment, BigDecimal amount, String reason) {
         try {
             String subject = "Refund Processed - " + appointment.getService().getName();
-            String htmlMessage = buildRefundEmailHtml(appointment, amount, reason);
+            String htmlMessage = emailTemplateService.buildRefundEmail(appointment, amount, reason);
             emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
         } catch (Exception e) {
             log.error("Failed to send refund email: {}", e.getMessage());
@@ -297,7 +298,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Override
     public Map<String, Object> syncAppointmentToCalendar(Integer appointmentId, String userEmail) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             // Check if user is connected to Google Calendar
             if (!googleCalendarService.isUserConnectedToGoogleCalendar(userEmail)) {
@@ -325,22 +326,22 @@ public class AppointmentServiceImpl implements AppointmentService {
 
             // Check if already synced
             boolean alreadySynced = googleCalendarService.isAppointmentSynced(appointmentId, userEmail);
-            
+
             // Use the existing helper method for the actual sync
             // For manual sync, we always use "create" action which will create or update
             syncAppointmentToGoogleCalendar(appointment, userEmail, alreadySynced ? "update" : "create");
-            
+
             // Verify the sync was successful by checking if it's now synced
             if (googleCalendarService.isAppointmentSynced(appointmentId, userEmail)) {
                 result.put("success", true);
                 result.put("calendarEventId", appointmentId.toString()); // We don't have direct access to calendar event ID here
-                log.info("Successfully synced appointment {} to Google Calendar for user {}", 
+                log.info("Successfully synced appointment {} to Google Calendar for user {}",
                         appointmentId, userEmail);
             } else {
                 result.put("success", false);
                 result.put("error", "Sync completed but appointment not found in calendar");
             }
-            
+
         } catch (AccessDeniedException e) {
             log.error("Access denied for appointment {}: {}", appointmentId, e.getMessage());
             result.put("success", false);
@@ -350,14 +351,14 @@ public class AppointmentServiceImpl implements AppointmentService {
             result.put("success", false);
             result.put("error", "Failed to sync appointment: " + e.getMessage());
         }
-        
+
         return result;
     }
 
     @Override
     public Map<String, Object> syncAllAppointmentsToCalendar(String userEmail) {
         Map<String, Object> result = new HashMap<>();
-        
+
         try {
             // Check if user is connected to Google Calendar
             if (!googleCalendarService.isUserConnectedToGoogleCalendar(userEmail)) {
@@ -370,13 +371,13 @@ public class AppointmentServiceImpl implements AppointmentService {
 
             // Sync existing appointments using the GoogleCalendarService method
             int syncedCount = googleCalendarService.syncExistingAppointments(userEmail);
-            
+
             result.put("success", true);
             result.put("syncedCount", syncedCount);
             result.put("failedCount", 0); // The implementation doesn't track failed syncs
-            
+
             log.info("Successfully synced {} appointments for user {}", syncedCount, userEmail);
-            
+
         } catch (Exception e) {
             log.error("Failed to sync all appointments for user {}: {}", userEmail, e.getMessage());
             result.put("success", false);
@@ -384,7 +385,7 @@ public class AppointmentServiceImpl implements AppointmentService {
             result.put("syncedCount", 0);
             result.put("failedCount", 0);
         }
-        
+
         return result;
     }
 
@@ -428,7 +429,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void sendBookingConfirmationEmail(Appointment appointment, byte[] contractPdf) {
         try {
             String subject = "Appointment Confirmation - " + appointment.getService().getName();
-            String htmlMessage = buildConfirmationEmailHtml(appointment);
+            String htmlMessage = emailTemplateService.buildBookingConfirmationEmail(appointment);
 
             if (contractPdf != null) {
                 emailService.sendEmailWithAttachment(
@@ -449,7 +450,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void sendRescheduleNotificationEmail(Appointment appointment, AvailabilitySlot oldSlot) {
         try {
             String subject = "Appointment Rescheduled - " + appointment.getService().getName();
-            String htmlMessage = buildRescheduleEmailHtml(appointment, oldSlot);
+            String htmlMessage = emailTemplateService.buildRescheduleEmail(appointment, oldSlot);
             emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
         } catch (Exception e) {
             log.error("Failed to send reschedule notification email: {}", e.getMessage());
@@ -459,106 +460,11 @@ public class AppointmentServiceImpl implements AppointmentService {
     private void sendCancellationEmail(Appointment appointment) {
         try {
             String subject = "Appointment Cancelled - " + appointment.getService().getName();
-            String htmlMessage = buildCancellationEmailHtml(appointment);
+            String htmlMessage = emailTemplateService.buildCancellationEmail(appointment);
             emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
         } catch (Exception e) {
             log.error("Failed to send cancellation email: {}", e.getMessage());
         }
-    }
-
-    // Email template methods || transfer them to email service in the future
-
-    private String buildConfirmationEmailHtml(Appointment appointment) {
-        String calendarSync = googleCalendarService.isUserConnectedToGoogleCalendar(appointment.getAppUser().getEmail())
-                ? "<p style=\"color: #28a745;\">✓ This appointment has been added to your Google Calendar</p>"
-                : "<p style=\"color: #6c757d;\">Connect your Google Calendar in your account settings to automatically sync appointments</p>";
-
-        return "<html>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Appointment Confirmed!</h2>"
-                + "<p style=\"font-size: 16px;\">Your appointment has been successfully booked.</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">Appointment Details:</h3>"
-                + "<p><strong>Service:</strong> " + appointment.getService().getName() + "</p>"
-                + "<p><strong>Date:</strong> " + appointment.getScheduledAt() + "</p>"
-                + "<p><strong>Time:</strong> " + appointment.getSlot().getStartTime().toLocalTime() + " - " + appointment.getSlot().getEndTime().toLocalTime() + "</p>"
-                + "<p><strong>Location:</strong> " + appointment.getLocation() + "</p>"
-                + "<p><strong>Price:</strong> $" + appointment.getService().getPrice() + "</p>"
-                + (appointment.getDescription() != null ? "<p><strong>Notes:</strong> " + appointment.getDescription() + "</p>" : "")
-                + "</div>"
-                + "<div style=\"margin-top: 15px;\">" + calendarSync + "</div>"
-                + "<p style=\"font-size: 14px; margin-top: 20px;\">If you need to reschedule or cancel, please contact us or use your account dashboard.</p>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
-    }
-
-    private String buildRescheduleEmailHtml(Appointment appointment, AvailabilitySlot oldSlot) {
-        String calendarSync = googleCalendarService.isUserConnectedToGoogleCalendar(appointment.getAppUser().getEmail())
-                ? "<p style=\"color: #28a745;\">✓ Your Google Calendar has been updated with the new appointment time</p>"
-                : "<p style=\"color: #6c757d;\">Connect your Google Calendar in your account settings to automatically sync appointment changes</p>";
-
-        return "<html>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Appointment Rescheduled</h2>"
-                + "<p style=\"font-size: 16px;\">Your appointment has been successfully rescheduled.</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">New Appointment Details:</h3>"
-                + "<p><strong>Service:</strong> " + appointment.getService().getName() + "</p>"
-                + "<p><strong>New Date:</strong> " + appointment.getScheduledAt() + "</p>"
-                + "<p><strong>New Time:</strong> " + appointment.getSlot().getStartTime().toLocalTime() + " - " + appointment.getSlot().getEndTime().toLocalTime() + "</p>"
-                + "<p><strong>Location:</strong> " + appointment.getLocation() + "</p>"
-                + "<hr style=\"margin: 15px 0;\">"
-                + "<p style=\"color: #666;\"><strong>Previous Time:</strong> " + oldSlot.getStartTime().toLocalDate() + " at " + oldSlot.getStartTime().toLocalTime() + "</p>"
-                + "</div>"
-                + "<div style=\"margin-top: 15px;\">" + calendarSync + "</div>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
-    }
-
-    private String buildCancellationEmailHtml(Appointment appointment) {
-        String calendarSync = googleCalendarService.isUserConnectedToGoogleCalendar(appointment.getAppUser().getEmail())
-                ? "<p style=\"color: #28a745;\">✓ This appointment has been removed from your Google Calendar</p>"
-                : "";
-
-        return "<html>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Appointment Cancelled</h2>"
-                + "<p style=\"font-size: 16px;\">Your appointment has been cancelled as requested.</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">Cancelled Appointment:</h3>"
-                + "<p><strong>Service:</strong> " + appointment.getService().getName() + "</p>"
-                + "<p><strong>Date:</strong> " + appointment.getScheduledAt() + "</p>"
-                + "<p><strong>Time:</strong> " + appointment.getSlot().getStartTime().toLocalTime() + "</p>"
-                + "</div>"
-                + "<div style=\"margin-top: 15px;\">" + calendarSync + "</div>"
-                + "<p style=\"font-size: 14px; margin-top: 20px;\">We're sorry to see you go! Feel free to book another appointment anytime.</p>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
-    }
-
-    private String buildRefundEmailHtml(Appointment appointment, BigDecimal amount, String reason) {
-        return "<html>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">Refund Processed</h2>"
-                + "<p style=\"font-size: 16px;\">A refund has been initiated for your cancelled appointment.</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);\">"
-                + "<h3 style=\"color: #333;\">Refund Details:</h3>"
-                + "<p><strong>Service:</strong> " + appointment.getService().getName() + "</p>"
-                + "<p><strong>Original Date:</strong> " + appointment.getScheduledAt() + "</p>"
-                + "<p><strong>Refund Amount:</strong> $" + amount + "</p>"
-                + "<p><strong>Reason:</strong> " + reason + "</p>"
-                + "</div>"
-                + "<p style=\"font-size: 14px; margin-top: 20px;\">Please allow 3-5 business days for the funds to appear in your account.</p>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
     }
 
     private AppointmentResponseDto mapToResponseDto(Appointment appointment) {
