@@ -43,6 +43,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .phoneNum(input.getPhoneNum())
                 .passwordHash(passwordEncoder.encode(input.getPassword()))
                 .role(role)
+                .smsNotificationsEnabled(input.isSmsNotificationsEnabled())
                 .build();
 
         user.setVerificationCode(generateVerificationCode());

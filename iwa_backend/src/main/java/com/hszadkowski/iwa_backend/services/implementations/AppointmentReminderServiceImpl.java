@@ -7,6 +7,7 @@ import com.hszadkowski.iwa_backend.repos.AppointmentStatusRepository;
 import com.hszadkowski.iwa_backend.services.interfaces.AppointmentReminderService;
 import com.hszadkowski.iwa_backend.services.interfaces.EmailService;
 import com.hszadkowski.iwa_backend.services.interfaces.EmailTemplateService;
+import com.hszadkowski.iwa_backend.services.interfaces.SmsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -24,6 +25,7 @@ public class AppointmentReminderServiceImpl implements AppointmentReminderServic
     private final EmailService emailService;
     private final EmailTemplateService emailTemplateService;
     private final AppointmentStatusRepository appointmentStatusRepository;
+    private final SmsService smsService;
 
     /**
      * Runs every day at 10:00 AM to send reminders for appointments scheduled for tomorrow
@@ -52,7 +54,7 @@ public class AppointmentReminderServiceImpl implements AppointmentReminderServic
 
         for (Appointment appointment : tomorrowAppointments) {
             try {
-                sendReminderEmail(appointment);
+                sendReminder(appointment);
                 log.info("Reminder sent for appointment ID: {}", appointment.getAppointmentId());
             } catch (Exception e) {
                 log.error("Failed to send reminder for appointment ID: {} - Error: {}",
@@ -63,13 +65,26 @@ public class AppointmentReminderServiceImpl implements AppointmentReminderServic
         log.info("Daily reminder process completed");
     }
 
-    private void sendReminderEmail(Appointment appointment) {
+    private void sendReminder(Appointment appointment) {
         try {
             String subject = "Reminder: Your appointment is tomorrow - " + appointment.getService().getName();
             String htmlMessage = emailTemplateService.buildReminderEmailHtml(appointment);
             emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
+
+            String phoneNumber = appointment.getAppUser().getPhoneNum();
+            if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                String smsMessage = String.format("Hi %s, reminder for your appointment tomorrow at %s. Service: %s. See you soon! - Glamour Studio",
+                        appointment.getAppUser().getName(),
+                        appointment.getSlot().getStartTime().toLocalTime(),
+                        appointment.getService().getName()
+                );
+
+                smsService.sendSms(phoneNumber, smsMessage);
+            }
+
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send reminder email", e);
+            log.error("Failed to send notification for appointment ID: {} - Error: {}",
+                    appointment.getAppointmentId(), e.getMessage());
         }
     }
 

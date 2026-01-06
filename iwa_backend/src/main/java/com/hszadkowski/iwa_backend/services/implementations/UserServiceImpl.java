@@ -29,6 +29,7 @@ public class UserServiceImpl implements UserService {
         user.setName(updateDto.getName());
         user.setSurname(updateDto.getSurname());
         user.setPhoneNum(updateDto.getPhoneNum());
+        user.setSmsNotificationsEnabled(updateDto.isSmsNotificationsEnabled());
         
         return userRepository.save(user);
     }

@@ -32,4 +32,6 @@ public class RegisterUserRequestDto {
     private String password;
 
     private String role; // TODO: passing role should be done differently to up the security
+
+    private boolean smsNotificationsEnabled;
 }

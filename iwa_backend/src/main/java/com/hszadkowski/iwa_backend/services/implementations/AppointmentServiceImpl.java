@@ -33,6 +33,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final AvailabilitySlotRepository availabilitySlotRepository;
     private final AvailabilityService availabilityService;
     private final EmailService emailService;
+    private final SmsService smsService;
     private final EmailTemplateService emailTemplateService;
     private final GoogleCalendarService googleCalendarService;
     private final PayUService payUService;
@@ -93,6 +94,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         // Send confirmation email
         sendBookingConfirmationEmail(savedAppointment, contractPdf);
 
+        if (savedAppointment.getAppUser().isSmsNotificationsEnabled()) {
+            sendSmsNotification(savedAppointment, "Booking Confirmed");
+        }
+
         // Sync to Google Calendar if user is connected
         syncAppointmentToGoogleCalendar(savedAppointment, userEmail, "create");
 
@@ -146,6 +151,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         Appointment updatedAppointment = appointmentRepository.save(appointment);
 
         sendRescheduleNotificationEmail(updatedAppointment, oldSlot);
+
+        if (updatedAppointment.getAppUser().isSmsNotificationsEnabled()) {
+            sendSmsNotification(updatedAppointment, "Rescheduled");
+        }
 
         // Update Google Calendar event if user is connected
         syncAppointmentToGoogleCalendar(updatedAppointment, userEmail, "update");
@@ -216,8 +225,41 @@ public class AppointmentServiceImpl implements AppointmentService {
 
         sendCancellationEmail(appointment);
 
+        if (appointment.getAppUser().isSmsNotificationsEnabled()) {
+            sendSmsNotification(appointment, "Cancelled");
+        }
+
         // Delete from Google Calendar of the appointment owner
         syncAppointmentToGoogleCalendar(appointment, appointment.getAppUser().getEmail(), "delete");
+    }
+
+    private void sendSmsNotification(Appointment appointment, String type) {
+        try {
+            String phone = appointment.getAppUser().getPhoneNum();
+            if (phone == null || phone.isEmpty()) return;
+
+            String time = appointment.getSlot().getStartTime().toLocalTime().toString();
+            String date = appointment.getScheduledAt().toString();
+            String serviceName = appointment.getService().getName();
+
+            String message = switch (type) {
+                case "Booking Confirmed" ->
+                        String.format("Glamour Studio: Your appointment for %s is confirmed for %s at %s.",
+                                serviceName, date, time);
+                case "Rescheduled" ->
+                        String.format("Glamour Studio: Appointment rescheduled. New time: %s at %s for %s.",
+                                date, time, serviceName);
+                case "Cancelled" -> String.format("Glamour Studio: Your appointment for %s on %s has been cancelled.",
+                        serviceName, date);
+                default -> "";
+            };
+
+            if (!message.isEmpty()) {
+                smsService.sendSms(phone, message);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send SMS for appointment {}: {}", appointment.getAppointmentId(), e.getMessage());
+        }
     }
 
     private void handleRefund(Appointment appointment, Payment payment) {

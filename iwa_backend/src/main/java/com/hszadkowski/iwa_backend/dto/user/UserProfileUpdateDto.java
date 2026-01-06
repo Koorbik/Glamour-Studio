@@ -25,4 +25,6 @@ public class UserProfileUpdateDto {
     @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^\\+?[1-9]\\d{1,14}$", message = "Please enter a valid phone number")
     private String phoneNum;
+
+    private boolean smsNotificationsEnabled;
 }
