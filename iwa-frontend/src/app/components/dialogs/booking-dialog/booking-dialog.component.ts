@@ -10,6 +10,7 @@ import {AvailabilitySlotResponseDto} from '../../../interfaces/availability.dto'
 import {ServiceResponseDto} from '../../../interfaces/service.dto';
 import {BookAppointmentDto} from '../../../interfaces/appointment.dto';
 import {MatCheckboxModule} from '@angular/material/checkbox';
+import {MatRadioModule} from '@angular/material/radio';
 
 export interface BookingDialogData {
   service: ServiceResponseDto;
@@ -27,7 +28,8 @@ export interface BookingDialogData {
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
-    MatCheckboxModule
+    MatCheckboxModule,
+    MatRadioModule
   ],
   templateUrl: './booking-dialog.component.html',
   styleUrls: ['./booking-dialog.component.scss']
@@ -43,6 +45,7 @@ export class BookingDialogComponent {
     this.bookingForm = this.fb.group({
       location: ['', [Validators.required, Validators.minLength(5)]],
       description: ['', [Validators.maxLength(500)]],
+      paymentMethod: ['ONLINE', [Validators.required]],
       acceptsTerms: [false, [Validators.requiredTrue]]
     });
   }
@@ -52,14 +55,17 @@ export class BookingDialogComponent {
       const formValue = this.bookingForm.value;
 
       const bookingRequest: BookAppointmentDto = {
-        slotId: this.data.slotId,
+        slotId: this.data.slot.slotId,
         serviceId: this.data.service.serviceId,
         location: formValue.location,
         description: formValue.description,
         acceptsTerms: formValue.acceptsTerms
       };
 
-      this.dialogRef.close(bookingRequest);
+      this.dialogRef.close({
+        bookingRequest,
+        paymentMethod: formValue.paymentMethod
+      });
     }
   }
 

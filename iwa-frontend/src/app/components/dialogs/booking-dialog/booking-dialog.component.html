@@ -42,6 +42,14 @@
       <mat-hint align="end">{{bookingForm.get('description')?.value?.length || 0}}/500</mat-hint>
     </mat-form-field>
 
+    <div class="payment-section" style="margin-top: 16px;">
+      <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #555;">Payment Method</label>
+      <mat-radio-group formControlName="paymentMethod" color="primary" style="display: flex; flex-direction: column; gap: 8px;">
+        <mat-radio-button value="ONLINE">Pay Online (PayU)</mat-radio-button>
+        <mat-radio-button value="CASH">Pay at Studio (Cash)</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
     <div class="terms-container" style="margin-top: 16px; margin-bottom: 8px;">
       <mat-checkbox formControlName="acceptsTerms" color="primary">
         I accept the Terms & Conditions and agree to pay

@@ -83,38 +83,35 @@ export class ServiceDetailComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        const bookingData: BookAppointmentDto = {
-          slotId: slot.slotId,
-          serviceId: this.service!.serviceId,
-          location: result.location,
-          description: result.description,
-          acceptsTerms: result.acceptsTerms
-        };
-
-        this.processBooking(bookingData);
+      if (result && result.bookingRequest) {
+        this.processBooking(result.bookingRequest, result.paymentMethod);
       }
     });
   }
 
-  private processBooking(bookingData: BookAppointmentDto): void {
+  private processBooking(bookingData: BookAppointmentDto, paymentMethod: string): void {
     this.apiService.post<AppointmentResponseDto>('appointments', bookingData)
       .pipe(
         switchMap((appointment) => {
-          this.snackBar.open('Appointment booked successfully! Redirecting to payment...', 'Close', {
+          this.snackBar.open('Appointment booked successfully! Processing payment...', 'Close', {
             duration: 2000,
           });
 
-          return this.paymentService.createOrder(appointment.appointmentId);
+          // Branch logic based on payment method
+          if (paymentMethod === 'ONLINE') {
+            return this.paymentService.createOrder(appointment.appointmentId);
+          } else {
+            return this.paymentService.initiateCashPayment(appointment.appointmentId);
+          }
         })
       )
       .subscribe({
-        next: (paymentResponse) => {
-          if (paymentResponse.success && paymentResponse.data.redirectUri) {
+        next: (paymentResponse: any) => {
+          if (paymentMethod === 'ONLINE' && paymentResponse.success && paymentResponse.data?.redirectUri) {
             window.location.href = paymentResponse.data.redirectUri;
           } else {
             this.router.navigate(['/dashboard']);
-            this.snackBar.open('Booking successful. Please complete payment from your dashboard.', 'OK', {
+            this.snackBar.open('Booking confirmed. You have selected to pay at the studio.', 'OK', {
               duration: 5000,
             });
           }
