@@ -35,4 +35,11 @@ public class Payment {
     private BigDecimal amount;
     private String status;
     private LocalDateTime paidAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method")
+    private PaymentMethod paymentMethod;
+
+    @Column(name = "invoice_id")
+    private Long invoiceId;
 }

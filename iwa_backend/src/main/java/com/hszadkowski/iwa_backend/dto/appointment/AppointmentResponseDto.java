@@ -25,4 +25,6 @@ public class AppointmentResponseDto {
     private LocalDate scheduledAt;
     private String description;
     private String paymentStatus;
+    private String paymentMethod;
+    private Integer paymentId;
 }

@@ -281,4 +281,25 @@ export class UserDashboardComponent implements OnInit {
       }
     });
   }
+  payAtStudio(appointment: AppointmentResponseDto): void {
+    if (!confirm('Confirm that you will pay cash at the studio?')) return;
+
+    this.isProcessingPayment.set(appointment.appointmentId);
+
+    this.paymentService.initiateCashPayment(appointment.appointmentId).subscribe({
+      next: () => {
+        this.snackBar.open('Payment method set to Cash. Please pay upon arrival.', 'Close', {
+          duration: 5000,
+          panelClass: ['success-snackbar']
+        });
+        this.isProcessingPayment.set(null);
+        this.loadAppointments();
+      },
+      error: () => {
+        this.snackBar.open('Failed to set payment method', 'Close', { panelClass: ['error-snackbar'] });
+        this.isProcessingPayment.set(null);
+      }
+    });
+  }
+
 }

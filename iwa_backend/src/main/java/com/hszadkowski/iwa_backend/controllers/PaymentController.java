@@ -35,4 +35,18 @@ public class PaymentController {
         payUService.handleNotification(payload, signature);
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/pay-at-studio/{appointmentId}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> payAtStudio(@PathVariable Integer appointmentId) {
+        payUService.initiateCashPayment(appointmentId);
+        return ResponseEntity.ok(ApiResponse.success("Cash payment selected", null));
+    }
+
+    @PostMapping("/{paymentId}/confirm-cash")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> confirmCashPayment(@PathVariable Integer paymentId) {
+        payUService.finalizePayment(paymentId);
+        return ResponseEntity.ok(ApiResponse.success("Payment confirmed and invoice sent", null));
+    }
 }

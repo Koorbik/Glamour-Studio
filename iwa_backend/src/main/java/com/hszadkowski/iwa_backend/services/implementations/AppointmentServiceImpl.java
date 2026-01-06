@@ -35,6 +35,7 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final EmailService emailService;
     private final GoogleCalendarService googleCalendarService;
     private final PayUService payUService;
+    private final ContractService contractService;
     private final PaymentRepository paymentRepository;
 
     @Override
@@ -75,10 +76,21 @@ public class AppointmentServiceImpl implements AppointmentService {
         slot.setIsBooked(true);
         availabilitySlotRepository.save(slot);
 
+        if (!Boolean.TRUE.equals(request.getAcceptsTerms())) {
+            throw new RuntimeException("You must accept the terms and conditions.");
+        }
+
         Appointment savedAppointment = appointmentRepository.save(appointment);
 
+        byte[] contractPdf = null;
+        try {
+            contractPdf = contractService.generateContract(savedAppointment);
+        } catch (Exception e) {
+            log.error("Failed to generate contract", e);
+        }
+
         // Send confirmation email
-        sendBookingConfirmationEmail(savedAppointment);
+        sendBookingConfirmationEmail(savedAppointment, contractPdf);
 
         // Sync to Google Calendar if user is connected
         syncAppointmentToGoogleCalendar(savedAppointment, userEmail, "create");
@@ -413,13 +425,23 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
 
-    private void sendBookingConfirmationEmail(Appointment appointment) {
+    private void sendBookingConfirmationEmail(Appointment appointment, byte[] contractPdf) {
         try {
             String subject = "Appointment Confirmation - " + appointment.getService().getName();
             String htmlMessage = buildConfirmationEmailHtml(appointment);
-            emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
+
+            if (contractPdf != null) {
+                emailService.sendEmailWithAttachment(
+                        appointment.getAppUser().getEmail(),
+                        subject,
+                        htmlMessage,
+                        "Service_Agreement.pdf",
+                        contractPdf
+                );
+            } else {
+                emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
+            }
         } catch (Exception e) {
-            // Log error but don't fail the booking
             log.error("Failed to send booking confirmation email: {}", e.getMessage());
         }
     }
@@ -540,8 +562,18 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private AppointmentResponseDto mapToResponseDto(Appointment appointment) {
+        String paymentStatus = "UNPAID";
+        String paymentMethod = null;
+        Integer paymentId = null;
 
-        String paymentStatus = (appointment.getPayment() != null) ? appointment.getPayment().getStatus() : "UNPAID";
+        if (appointment.getPayment() != null) {
+            paymentStatus = appointment.getPayment().getStatus();
+            paymentId = appointment.getPayment().getPaymentId();
+
+            if (appointment.getPayment().getPaymentMethod() != null) {
+                paymentMethod = appointment.getPayment().getPaymentMethod().name();
+            }
+        }
 
         return new AppointmentResponseDto(
                 appointment.getAppointmentId(),
@@ -556,7 +588,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getLocation(),
                 appointment.getScheduledAt(),
                 appointment.getDescription(),
-                paymentStatus
+                paymentStatus,
+                paymentMethod,
+                paymentId
         );
     }
 }

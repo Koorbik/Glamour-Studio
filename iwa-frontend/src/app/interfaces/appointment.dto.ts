@@ -15,6 +15,7 @@ export interface AppointmentResponseDto {
   calendarSyncStatus?: 'SYNCED' | 'PENDING' | 'FAILED' | 'NOT_SYNCED';
   lastCalendarSync?: string;
   paymentStatus?: string;
+  paymentMethod?: string;
 }
 
 export interface BookAppointmentDto {
@@ -22,6 +23,7 @@ export interface BookAppointmentDto {
   serviceId: number;
   location: string;
   description?: string;
+  acceptsTerms: boolean;
 }
 
 export interface RescheduleAppointmentDto {

@@ -63,11 +63,24 @@
                       <mat-icon class="chip-icon">{{ getStatusIcon(appointment.status) }}</mat-icon>
                       {{ appointment.status }}
                     </mat-chip>
-                    @if (appointment.paymentStatus && appointment.paymentStatus !== 'UNPAID') {
-                      <mat-chip class="payment-chip" [class.paid]="appointment.paymentStatus === 'COMPLETED'">
-                        <mat-icon>{{ getPaymentStatusIcon(appointment.paymentStatus) }}</mat-icon>
-                        {{ appointment.paymentStatus }}
+
+                    @if (appointment.paymentStatus === 'COMPLETED') {
+                      <mat-chip class="payment-chip paid" [disabled]="true">
+                        <mat-icon>check_circle</mat-icon>
+                        PAID
                       </mat-chip>
+                    } @else if (appointment.paymentStatus === 'PENDING') {
+                      @if (appointment.paymentMethod === 'CASH') {
+                        <mat-chip class="payment-chip pending" [disabled]="true" style="background-color: #e3f2fd; color: #0d47a1;">
+                          <mat-icon>store</mat-icon>
+                          CASH PENDING
+                        </mat-chip>
+                      } @else {
+                        <mat-chip class="payment-chip pending" [disabled]="true" style="background-color: #fff3cd; color: #856404;">
+                          <mat-icon>hourglass_empty</mat-icon>
+                          PAYMENT PENDING
+                        </mat-chip>
+                      }
                     }
                   </div>
 
@@ -110,7 +123,7 @@
                           <mat-icon>payments</mat-icon>
                           <div class="info-content">
                             <span class="info-label">Price</span>
-                            <span class="info-value">${{ appointment.servicePrice }}</span>
+                            <span class="info-value">{{ appointment.servicePrice }} PLN</span>
                           </div>
                         </div>
                       }
@@ -145,68 +158,94 @@
                   <mat-divider></mat-divider>
 
                   <div class="card-actions">
-                    @if ((appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && appointment.paymentStatus !== 'COMPLETED') {
-                      <button mat-raised-button
-                              color="primary"
-                              class="action-button pay-now-btn"
-                              (click)="payForAppointment(appointment)"
-                              [disabled]="isProcessingPayment() === appointment.appointmentId">
-                        @if (isProcessingPayment() === appointment.appointmentId) {
-                          <mat-spinner diameter="18"></mat-spinner>
-                        } @else {
-                          <mat-icon>credit_card</mat-icon>
-                        }
-                        <span>{{ isProcessingPayment() === appointment.appointmentId ? 'Processing...' : 'Pay Now' }}</span>
-                      </button>
-                    }
 
-                    @if (canSyncToCalendar(appointment)) {
-                      <button mat-stroked-button
-                              class="action-button calendar-sync-btn"
-                              (click)="syncAppointmentToCalendar(appointment)"
-                              [disabled]="appointment.isSyncing"
-                              matTooltip="Sync to Google Calendar">
-                        @if (appointment.isSyncing) {
-                          <mat-spinner diameter="18"></mat-spinner>
-                        } @else {
-                          <mat-icon>event</mat-icon>
-                        }
-                        <span>{{ appointment.isSyncing ? 'Syncing...' : 'Add to Calendar' }}</span>
-                      </button>
-                    }
+                    @if ((appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED')
+                    && appointment.paymentStatus !== 'COMPLETED'
+                    && !(appointment.paymentStatus === 'PENDING' && appointment.paymentMethod === 'CASH')) {
 
-                    @if (appointment.calendarEventId) {
-                      <div class="calendar-synced-badge" matTooltip="Synced to Google Calendar">
-                        <mat-icon>check_circle</mat-icon>
-                        <span>In Calendar</span>
-                      </div>
-                    }
+                      <div class="payment-buttons" style="display: flex; gap: 8px; align-items: center;">
 
-                    @if (canReschedule(appointment)) {
-                      <div class="reschedule-wrapper" [matTooltip]="isWithin24Hours(appointment.scheduledAt) ? 'For last minute changes, please contact the makeup artist directly.' : ''">
+                        <button mat-raised-button
+                                color="primary"
+                                class="action-button pay-now-btn"
+                                (click)="payForAppointment(appointment)"
+                                [disabled]="isProcessingPayment() === appointment.appointmentId">
+                          @if (isProcessingPayment() === appointment.appointmentId) {
+                            <mat-spinner diameter="18"></mat-spinner>
+                          } @else {
+                            <mat-icon>credit_card</mat-icon>
+                          }
+                          <span>{{ isProcessingPayment() === appointment.appointmentId ? 'Processing...' : 'Pay Online' }}</span>
+                        </button>
+
                         <button mat-stroked-button
-                                class="action-button reschedule-btn"
-                                (click)="openRescheduleDialog(appointment)"
-                                [disabled]="isWithin24Hours(appointment.scheduledAt)">
-                          <mat-icon>update</mat-icon>
-                          <span>Reschedule</span>
+                                color="accent"
+                                class="action-button cash-btn"
+                                (click)="payAtStudio(appointment)"
+                                [disabled]="isProcessingPayment() === appointment.appointmentId"
+                                matTooltip="Pay cash upon arrival">
+                          <mat-icon>store</mat-icon>
+                          <span>Pay at Studio</span>
                         </button>
                       </div>
+
+                    } @else if (appointment.paymentStatus === 'PENDING' && appointment.paymentMethod === 'CASH') {
+                      <div class="cash-notice" style="color: #0d47a1; font-size: 0.9em; display: flex; align-items: center; gap: 4px;">
+                        <mat-icon style="font-size: 18px; height: 18px; width: 18px;">info</mat-icon>
+                        Please pay at the studio upon arrival.
+                      </div>
                     }
 
-                    @if (canCancel(appointment)) {
-                      <button mat-stroked-button class="action-button cancel-btn" (click)="openCancelDialog(appointment)">
-                        <mat-icon>cancel</mat-icon>
-                        <span>Cancel</span>
-                      </button>
-                    }
+                    <div class="other-actions" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
 
-                    @if (appointment.serviceId) {
-                      <button mat-stroked-button class="action-button details-btn" (click)="viewServiceDetails(appointment.serviceId)">
-                        <mat-icon>info_outline</mat-icon>
-                        <span>Details</span>
-                      </button>
-                    }
+                      @if (canSyncToCalendar(appointment)) {
+                        <button mat-stroked-button
+                                class="action-button calendar-sync-btn"
+                                (click)="syncAppointmentToCalendar(appointment)"
+                                [disabled]="appointment.isSyncing"
+                                matTooltip="Sync to Google Calendar">
+                          @if (appointment.isSyncing) {
+                            <mat-spinner diameter="18"></mat-spinner>
+                          } @else {
+                            <mat-icon>event</mat-icon>
+                          }
+                          <span>{{ appointment.isSyncing ? 'Syncing...' : 'Add to Calendar' }}</span>
+                        </button>
+                      }
+
+                      @if (appointment.calendarEventId) {
+                        <div class="calendar-synced-badge" matTooltip="Synced to Google Calendar">
+                          <mat-icon>check_circle</mat-icon>
+                          <span>In Calendar</span>
+                        </div>
+                      }
+
+                      @if (canReschedule(appointment)) {
+                        <div class="reschedule-wrapper" [matTooltip]="isWithin24Hours(appointment.scheduledAt) ? 'For last minute changes, please contact the makeup artist directly.' : ''">
+                          <button mat-stroked-button
+                                  class="action-button reschedule-btn"
+                                  (click)="openRescheduleDialog(appointment)"
+                                  [disabled]="isWithin24Hours(appointment.scheduledAt)">
+                            <mat-icon>update</mat-icon>
+                            <span>Reschedule</span>
+                          </button>
+                        </div>
+                      }
+
+                      @if (canCancel(appointment)) {
+                        <button mat-stroked-button class="action-button cancel-btn" (click)="openCancelDialog(appointment)">
+                          <mat-icon>cancel</mat-icon>
+                          <span>Cancel</span>
+                        </button>
+                      }
+
+                      @if (appointment.serviceId) {
+                        <button mat-stroked-button class="action-button details-btn" (click)="viewServiceDetails(appointment.serviceId)">
+                          <mat-icon>info_outline</mat-icon>
+                          <span>Details</span>
+                        </button>
+                      }
+                    </div>
                   </div>
 
                   @if (isWithin24Hours(appointment.scheduledAt)) {
@@ -271,7 +310,7 @@
                       @if (appointment.servicePrice) {
                         <div class="info-item">
                           <mat-icon>payments</mat-icon>
-                          <span class="info-value">${{ appointment.servicePrice }}</span>
+                          <span class="info-value">{{ appointment.servicePrice }} PLN</span>
                         </div>
                       }
                     </div>

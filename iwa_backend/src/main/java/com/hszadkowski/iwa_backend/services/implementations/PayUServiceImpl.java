@@ -10,9 +10,12 @@ import com.hszadkowski.iwa_backend.dto.payu.PayUTokenResponseDto;
 import com.hszadkowski.iwa_backend.exceptions.AppointmentNotFoundException;
 import com.hszadkowski.iwa_backend.models.Appointment;
 import com.hszadkowski.iwa_backend.models.Payment;
+import com.hszadkowski.iwa_backend.models.PaymentMethod;
 import com.hszadkowski.iwa_backend.repos.AppointmentRepository;
 import com.hszadkowski.iwa_backend.repos.PaymentRepository;
+import com.hszadkowski.iwa_backend.services.interfaces.EmailService;
 import com.hszadkowski.iwa_backend.services.interfaces.PayUService;
+import com.hszadkowski.iwa_backend.services.interfaces.ZohoInvoiceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +31,9 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,6 +43,10 @@ public class PayUServiceImpl implements PayUService {
     private final RestTemplate restTemplate;
     private final PaymentRepository paymentRepository;
     private final AppointmentRepository appointmentRepository;
+
+    // Injected new services
+    private final ZohoInvoiceService zohoInvoiceService;
+    private final EmailService emailService;
 
     @Value("${payu.base-url}")
     private String payuBaseUrl;
@@ -59,7 +68,8 @@ public class PayUServiceImpl implements PayUService {
     @Transactional
     public PaymentInitiationDto createOrder(Integer appointmentId, String clientIp) {
 
-        Appointment appointment = appointmentRepository.findById(appointmentId).orElseThrow(() -> new AppointmentNotFoundException("Appointment not found"));
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found"));
 
         PayUTokenResponseDto token = getAuthToken();
 
@@ -67,7 +77,7 @@ public class PayUServiceImpl implements PayUService {
         int totalAmount = price.multiply(new BigDecimal(100)).intValue();
         String description = appointment.getService().getName();
 
-        java.util.Optional<Payment> existingPayment = paymentRepository.findByAppointment(appointment);
+        Optional<Payment> existingPayment = paymentRepository.findByAppointment(appointment);
         Payment payment;
         if (existingPayment.isPresent()) {
             payment = existingPayment.get();
@@ -79,9 +89,30 @@ public class PayUServiceImpl implements PayUService {
         }
 
         payment.setStatus("PENDING");
+        payment.setPaymentMethod(PaymentMethod.PAYU);
         paymentRepository.save(payment);
 
-        PayUOrderCreateRequestDto requestDto = PayUOrderCreateRequestDto.builder().notifyUrl(notifyUrl).continueUrl(continueUrl).customerIp(clientIp).merchantPosId(payuPosId).description(description).currencyCode("PLN").totalAmount(totalAmount).products(Collections.singletonList(PayUOrderCreateRequestDto.Product.builder().name(description).unitPrice(totalAmount).quantity(1).build())).buyer(PayUOrderCreateRequestDto.Buyer.builder().email(appointment.getAppUser().getEmail()).firstName(appointment.getAppUser().getName()).lastName(appointment.getAppUser().getSurname()).language("pl").build()).build();
+        PayUOrderCreateRequestDto requestDto = PayUOrderCreateRequestDto.builder()
+                .notifyUrl(notifyUrl)
+                .continueUrl(continueUrl)
+                .customerIp(clientIp)
+                .merchantPosId(payuPosId)
+                .description(description)
+                .currencyCode("PLN")
+                .totalAmount(totalAmount)
+                .products(Collections.singletonList(
+                        PayUOrderCreateRequestDto.Product.builder()
+                                .name(description)
+                                .unitPrice(totalAmount)
+                                .quantity(1)
+                                .build()))
+                .buyer(PayUOrderCreateRequestDto.Buyer.builder()
+                        .email(appointment.getAppUser().getEmail())
+                        .firstName(appointment.getAppUser().getName())
+                        .lastName(appointment.getAppUser().getSurname())
+                        .language("pl")
+                        .build())
+                .build();
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -89,7 +120,8 @@ public class PayUServiceImpl implements PayUService {
         HttpEntity<PayUOrderCreateRequestDto> request = new HttpEntity<>(requestDto, headers);
 
         try {
-            ResponseEntity<PayUOrderResponseDto> response = restTemplate.postForEntity(payuBaseUrl + "/api/v2_1/orders", request, PayUOrderResponseDto.class);
+            ResponseEntity<PayUOrderResponseDto> response = restTemplate.postForEntity(
+                    payuBaseUrl + "/api/v2_1/orders", request, PayUOrderResponseDto.class);
 
             PayUOrderResponseDto responseBody = response.getBody();
             boolean isSuccessStatus = response.getStatusCode().is2xxSuccessful() || response.getStatusCode().value() == 302;
@@ -112,6 +144,36 @@ public class PayUServiceImpl implements PayUService {
 
     @Override
     @Transactional
+    public void initiateCashPayment(Integer appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new AppointmentNotFoundException("Appointment not found"));
+
+        // Retrieve existing payment if it exists
+        Payment payment = paymentRepository.findByAppointment(appointment).orElse(new Payment());
+
+        if (payment.getPaymentId() != null) {
+            if ("COMPLETED".equals(payment.getStatus())) {
+                throw new RuntimeException("This appointment is already paid");
+            }
+            log.info("Updating existing payment (Status: {}) to CASH/PENDING for appointment {}",
+                    payment.getStatus(), appointmentId);
+        }
+
+        payment.setAppointment(appointment);
+        payment.setAppUser(appointment.getAppUser());
+        payment.setAmount(appointment.getService().getPrice());
+        payment.setStatus("PENDING");
+        payment.setPaymentMethod(PaymentMethod.CASH);
+
+        // Clear transaction ID because Cash doesn't have a PayU Order ID
+        payment.setTransactionId(null);
+
+        paymentRepository.save(payment);
+        log.info("Cash payment initiated for appointment {}", appointmentId);
+    }
+
+    @Override
+    @Transactional
     public void handleNotification(String payload, String signatureHeader) {
         // 1. Verify Signature
         verifySignature(payload, signatureHeader);
@@ -129,9 +191,13 @@ public class PayUServiceImpl implements PayUService {
             log.info("Updating payment {} status to {}", orderId, status);
 
             if ("COMPLETED".equals(status)) {
-                payment.setStatus("COMPLETED");
-                payment.setPaidAt(java.time.LocalDateTime.now());
-                paymentRepository.save(payment);
+                if (!"COMPLETED".equals(payment.getStatus())) {
+                    payment.setStatus("COMPLETED");
+                    payment.setPaidAt(LocalDateTime.now());
+                    paymentRepository.save(payment);
+
+                    finalizePaymentProcess(payment);
+                }
             } else if ("CANCELED".equals(status)) {
                 payment.setStatus("CANCELED");
                 paymentRepository.save(payment);
@@ -141,6 +207,57 @@ public class PayUServiceImpl implements PayUService {
             }
         } catch (Exception e) {
             throw new RuntimeException("Error handling notification", e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void finalizePayment(Integer paymentId) {
+        // This is typically called by Admin for Cash payments
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new RuntimeException("Payment not found"));
+
+        if (!"COMPLETED".equals(payment.getStatus())) {
+            payment.setStatus("COMPLETED");
+            payment.setPaidAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // Trigger Invoice Generation and Email
+            finalizePaymentProcess(payment);
+        }
+    }
+
+    private void finalizePaymentProcess(Payment payment) {
+        try {
+            log.info("Generating invoice for Payment ID: {}", payment.getPaymentId());
+
+            byte[] invoicePdf = zohoInvoiceService.createAndDownloadInvoice(payment);
+
+            paymentRepository.save(payment);
+
+            String subject = "Payment Receipt - Glamour Studio";
+            String body = "<html><body>" +
+                    "<h3>Payment Received</h3>" +
+                    "<p>Thank you! We have received your payment of <strong>" + payment.getAmount() + " PLN</strong>.</p>" +
+                    "<p>Please find your invoice attached.</p>" +
+                    "</body></html>";
+
+            // 3. Send Email
+            if (invoicePdf != null) {
+                String fileName = "Invoice_" + (payment.getInvoiceId() != null ? payment.getInvoiceId() : payment.getPaymentId()) + ".pdf";
+                emailService.sendEmailWithAttachment(
+                        payment.getAppUser().getEmail(),
+                        subject,
+                        body,
+                        fileName,
+                        invoicePdf
+                );
+            } else {
+                log.warn("Invoice PDF was null. Sending simple confirmation email.");
+                emailService.sendVerificationEmail(payment.getAppUser().getEmail(), subject, body);
+            }
+        } catch (Exception e) {
+            log.error("Error during finalization (Invoice/Email) for payment {}", payment.getPaymentId(), e);
         }
     }
 
@@ -166,7 +283,7 @@ public class PayUServiceImpl implements PayUService {
         String expectedSignature = DigestUtils.md5DigestAsHex(dataToHash.getBytes());
 
         if (!incomingSignature.equalsIgnoreCase(expectedSignature)) {
-                        log.error("Signature Mismatch detected during PayU notification verification.");
+            log.error("Signature Mismatch detected during PayU notification verification.");
             throw new SecurityException("Invalid PayU Signature");
         }
     }
