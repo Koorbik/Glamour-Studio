@@ -2,7 +2,6 @@
   <h1>Admin Dashboard</h1>
 
   <mat-tab-group>
-    <!-- Appointments Tab -->
     <mat-tab label="Appointments">
       <div class="tab-content">
         <mat-card>
@@ -10,7 +9,6 @@
             <mat-card-title>Manage Appointments</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <!-- Enhanced Filters -->
             <mat-expansion-panel
               [(expanded)]="appointmentFiltersExpanded"
               class="filter-panel">
@@ -18,21 +16,23 @@
                 <mat-panel-title>
                   <mat-icon>filter_list</mat-icon>
                   Filters
-                  <mat-chip *ngIf="getActiveAppointmentFiltersCount() > 0"
-                            class="filter-count-chip">
-                    {{ getActiveAppointmentFiltersCount() }}
-                  </mat-chip>
+                  @if (getActiveAppointmentFiltersCount() > 0) {
+                    <mat-chip class="filter-count-chip">
+                      {{ getActiveAppointmentFiltersCount() }}
+                    </mat-chip>
+                  }
                 </mat-panel-title>
               </mat-expansion-panel-header>
 
               <div class="filters-grid">
-                <!-- Row 1: Status, Service, Date Range -->
                 <mat-form-field appearance="outline">
                   <mat-label>Status</mat-label>
                   <mat-select [(ngModel)]="appointmentFilters.status">
-                    <mat-option *ngFor="let status of appointmentStatusOptions" [value]="status.value">
-                      {{ status.label }}
-                    </mat-option>
+                    @for (status of appointmentStatusOptions; track status.value) {
+                      <mat-option [value]="status.value">
+                        {{ status.label }}
+                      </mat-option>
+                    }
                   </mat-select>
                 </mat-form-field>
 
@@ -40,9 +40,11 @@
                   <mat-label>Service</mat-label>
                   <mat-select [(ngModel)]="appointmentFilters.serviceId">
                     <mat-option [value]="null">All Services</mat-option>
-                    <mat-option *ngFor="let service of services" [value]="service.serviceId">
-                      {{ service.name }}
-                    </mat-option>
+                    @for (service of services; track service.serviceId) {
+                      <mat-option [value]="service.serviceId">
+                        {{ service.name }}
+                      </mat-option>
+                    }
                   </mat-select>
                 </mat-form-field>
 
@@ -60,7 +62,6 @@
                   <mat-datepicker #dateToPicker></mat-datepicker>
                 </mat-form-field>
 
-                <!-- Row 2: Customer, Appointment ID, Location -->
                 <mat-form-field appearance="outline">
                   <mat-label>Customer (Name or ID)</mat-label>
                   <input matInput [(ngModel)]="appointmentFilters.customerId"
@@ -82,19 +83,18 @@
                   <mat-icon matSuffix>location_on</mat-icon>
                 </mat-form-field>
 
-                <!-- Row 3: Price Range and Actions -->
                 <mat-form-field appearance="outline">
                   <mat-label>Min Price</mat-label>
                   <input matInput type="number" [(ngModel)]="appointmentFilters.priceMin"
                          placeholder="0" min="0">
-                  <span matSuffix>$</span>
+                  <span matSuffix>PLN</span>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Max Price</mat-label>
                   <input matInput type="number" [(ngModel)]="appointmentFilters.priceMax"
                          placeholder="1000" min="0">
-                  <span matSuffix>$</span>
+                  <span matSuffix>PLN</span>
                 </mat-form-field>
 
                 <div class="filter-actions">
@@ -107,7 +107,6 @@
               </div>
             </mat-expansion-panel>
 
-            <!-- Results Summary -->
             <div class="results-summary">
               <span class="results-count">
                 Showing {{ getFilteredAppointments().length }} of {{ appointments.length }} appointments
@@ -120,7 +119,6 @@
               </button>
             </div>
 
-            <!-- Appointments Table -->
             <table mat-table [dataSource]="getFilteredAppointments()" class="appointments-table">
               <ng-container matColumnDef="appointmentId">
                 <th mat-header-cell *matHeaderCellDef>ID</th>
@@ -160,35 +158,68 @@
               <ng-container matColumnDef="status">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
                 <td mat-cell *matCellDef="let appointment">
-                  <span class="status-badge" [attr.data-status]="appointment.status">
-                    {{ appointment.status }}
-                  </span>
+                  <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <span class="status-badge" [attr.data-status]="appointment.status">
+                      {{ appointment.status }}
+                    </span>
+
+                    @if (appointment.paymentStatus === 'COMPLETED') {
+                      <span class="status-badge"
+                            style="background: #e8f5e9; color: #2e7d32; font-size: 0.8em; border: 1px solid #c8e6c9;">
+                        PAID
+                      </span>
+                    } @else if (appointment.paymentStatus === 'PENDING') {
+                      <span class="status-badge"
+                            style="background: #fff3e0; color: #ef6c00; font-size: 0.8em; border: 1px solid #ffe0b2;">
+                        {{ appointment.paymentMethod === 'CASH' ? 'CASH PENDING' : 'PAYMENT PENDING' }}
+                      </span>
+                    }
+                  </div>
                 </td>
               </ng-container>
 
               <ng-container matColumnDef="totalPrice">
                 <th mat-header-cell *matHeaderCellDef>Price</th>
-                <td mat-cell *matCellDef="let appointment">${{ appointment.servicePrice }}</td>
+                <td mat-cell *matCellDef="let appointment">{{ appointment.servicePrice }} PLN</td>
               </ng-container>
 
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let appointment">
-                  <button mat-icon-button [matMenuTriggerFor]="statusMenu"
-                          *ngIf="appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED'">
-                    <mat-icon>more_vert</mat-icon>
-                  </button>
+                  <div style="display: flex; align-items: center;">
+                    @if (appointment.paymentStatus === 'PENDING' &&
+                    appointment.paymentMethod === 'CASH' &&
+                    appointment.status !== 'CANCELLED') {
+
+                      <button mat-mini-fab
+                              color="accent"
+                              matTooltip="Confirm Cash Payment"
+                              (click)="markAsPaid(appointment.paymentId)"
+                              style="margin-right: 8px; transform: scale(0.8);">
+                        <mat-icon>attach_money</mat-icon>
+                      </button>
+                    }
+
+                    @if (appointment.status !== 'CANCELLED' && appointment.status !== 'COMPLETED') {
+                      <button mat-icon-button [matMenuTriggerFor]="statusMenu">
+                        <mat-icon>more_vert</mat-icon>
+                      </button>
+                    }
+                  </div>
+
                   <mat-menu #statusMenu="matMenu">
-                    <button mat-menu-item (click)="updateAppointmentStatus(appointment, 'CONFIRMED')"
-                            *ngIf="appointment.status === 'PENDING'">
-                      <mat-icon>check_circle</mat-icon>
-                      <span>Confirm</span>
-                    </button>
-                    <button mat-menu-item (click)="updateAppointmentStatus(appointment, 'COMPLETED')"
-                            *ngIf="appointment.status === 'CONFIRMED'">
-                      <mat-icon>done_all</mat-icon>
-                      <span>Mark as Completed</span>
-                    </button>
+                    @if (appointment.status === 'PENDING') {
+                      <button mat-menu-item (click)="updateAppointmentStatus(appointment, 'CONFIRMED')">
+                        <mat-icon>check_circle</mat-icon>
+                        <span>Confirm</span>
+                      </button>
+                    }
+                    @if (appointment.status === 'CONFIRMED') {
+                      <button mat-menu-item (click)="updateAppointmentStatus(appointment, 'COMPLETED')">
+                        <mat-icon>done_all</mat-icon>
+                        <span>Mark as Completed</span>
+                      </button>
+                    }
                     <button mat-menu-item (click)="cancelAppointment(appointment)">
                       <mat-icon>cancel</mat-icon>
                       <span>Cancel</span>
@@ -201,20 +232,22 @@
               <tr mat-row *matRowDef="let row; columns: appointmentDisplayedColumns;"></tr>
             </table>
 
-            <div class="no-data" *ngIf="getFilteredAppointments().length === 0">
-              <mat-icon>search_off</mat-icon>
-              <p>No appointments found matching the current filters.</p>
-              <button mat-button color="primary" (click)="clearAppointmentFilters()"
-                      *ngIf="getActiveAppointmentFiltersCount() > 0">
-                Clear Filters
-              </button>
-            </div>
+            @if (getFilteredAppointments().length === 0) {
+              <div class="no-data">
+                <mat-icon>search_off</mat-icon>
+                <p>No appointments found matching the current filters.</p>
+                @if (getActiveAppointmentFiltersCount() > 0) {
+                  <button mat-button color="primary" (click)="clearAppointmentFilters()">
+                    Clear Filters
+                  </button>
+                }
+              </div>
+            }
           </mat-card-content>
         </mat-card>
       </div>
     </mat-tab>
 
-    <!-- Availability Slots Tab -->
     <mat-tab label="Availability Slots">
       <div class="tab-content">
         <mat-card>
@@ -222,7 +255,6 @@
             <mat-card-title>Manage Availability Slots</mat-card-title>
           </mat-card-header>
           <mat-card-content>
-            <!-- Add New Slot Form -->
             <div class="add-slot-form">
               <h3>Add New Availability Slot</h3>
               <form [formGroup]="newSlotForm" (ngSubmit)="createAvailabilitySlot()">
@@ -230,9 +262,11 @@
                   <mat-form-field appearance="outline">
                     <mat-label>Service</mat-label>
                     <mat-select formControlName="serviceId">
-                      <mat-option *ngFor="let service of services" [value]="service.serviceId">
-                        {{ service.name }}
-                      </mat-option>
+                      @for (service of services; track service.serviceId) {
+                        <mat-option [value]="service.serviceId">
+                          {{ service.name }}
+                        </mat-option>
+                      }
                     </mat-select>
                   </mat-form-field>
 
@@ -261,7 +295,6 @@
               </form>
             </div>
 
-            <!-- Enhanced Slot Filters -->
             <mat-expansion-panel
               [(expanded)]="slotFiltersExpanded"
               class="filter-panel">
@@ -269,21 +302,23 @@
                 <mat-panel-title>
                   <mat-icon>filter_list</mat-icon>
                   Filters
-                  <mat-chip *ngIf="getActiveSlotFiltersCount() > 0"
-                            class="filter-count-chip">
-                    {{ getActiveSlotFiltersCount() }}
-                  </mat-chip>
+                  @if (getActiveSlotFiltersCount() > 0) {
+                    <mat-chip class="filter-count-chip">
+                      {{ getActiveSlotFiltersCount() }}
+                    </mat-chip>
+                  }
                 </mat-panel-title>
               </mat-expansion-panel-header>
 
               <div class="filters-grid">
-                <!-- Row 1: Status, Service, Date Range -->
                 <mat-form-field appearance="outline">
                   <mat-label>Status</mat-label>
                   <mat-select [(ngModel)]="slotFilters.status">
-                    <mat-option *ngFor="let status of slotStatusOptions" [value]="status.value">
-                      {{ status.label }}
-                    </mat-option>
+                    @for (status of slotStatusOptions; track status.value) {
+                      <mat-option [value]="status.value">
+                        {{ status.label }}
+                      </mat-option>
+                    }
                   </mat-select>
                 </mat-form-field>
 
@@ -291,9 +326,11 @@
                   <mat-label>Service</mat-label>
                   <mat-select [(ngModel)]="slotFilters.serviceId">
                     <mat-option [value]="null">All Services</mat-option>
-                    <mat-option *ngFor="let service of services" [value]="service.serviceId">
-                      {{ service.name }}
-                    </mat-option>
+                    @for (service of services; track service.serviceId) {
+                      <mat-option [value]="service.serviceId">
+                        {{ service.name }}
+                      </mat-option>
+                    }
                   </mat-select>
                 </mat-form-field>
 
@@ -311,7 +348,6 @@
                   <mat-datepicker #slotDateToPicker></mat-datepicker>
                 </mat-form-field>
 
-                <!-- Row 2: Slot ID, Time Range -->
                 <mat-form-field appearance="outline">
                   <mat-label>Slot ID</mat-label>
                   <input matInput [(ngModel)]="slotFilters.slotId"
@@ -341,7 +377,6 @@
               </div>
             </mat-expansion-panel>
 
-            <!-- Results Summary -->
             <div class="results-summary">
               <span class="results-count">
                 Showing {{ getFilteredSlots().length }} of {{ availabilitySlots.length }} slots
@@ -354,7 +389,6 @@
               </button>
             </div>
 
-            <!-- Availability Slots Table -->
             <table mat-table [dataSource]="getFilteredSlots()" class="slots-table">
               <ng-container matColumnDef="slotId">
                 <th mat-header-cell *matHeaderCellDef>ID</th>
@@ -391,15 +425,16 @@
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Actions</th>
                 <td mat-cell *matCellDef="let slot">
-                  <button mat-icon-button
-                          (click)="toggleSlotAvailability(slot)"
-                          [disabled]="shouldDisableSlotActions(slot)"
-                          [matTooltip]="slot.isBooked ? 'Release Booking' : 'Mark as Booked'"
-                          *ngIf="!isSlotExpired(slot)">
-                    <mat-icon [color]="slot.isBooked ? 'warn' : 'primary'">
-                      {{ slot.isBooked ? 'lock_open' : 'lock' }}
-                    </mat-icon>
-                  </button>
+                  @if (!isSlotExpired(slot)) {
+                    <button mat-icon-button
+                            (click)="toggleSlotAvailability(slot)"
+                            [disabled]="shouldDisableSlotActions(slot)"
+                            [matTooltip]="slot.isBooked ? 'Release Booking' : 'Mark as Booked'">
+                      <mat-icon [color]="slot.isBooked ? 'warn' : 'primary'">
+                        {{ slot.isBooked ? 'lock_open' : 'lock' }}
+                      </mat-icon>
+                    </button>
+                  }
                   <button mat-icon-button
                           color="warn"
                           (click)="deleteAvailabilitySlot(slot)"
@@ -415,14 +450,17 @@
                   [class.expired-row]="isSlotExpired(row)"></tr>
             </table>
 
-            <div class="no-data" *ngIf="getFilteredSlots().length === 0">
-              <mat-icon>search_off</mat-icon>
-              <p>No availability slots found matching the current filters.</p>
-              <button mat-button color="primary" (click)="clearSlotFilters()"
-                      *ngIf="getActiveSlotFiltersCount() > 0">
-                Clear Filters
-              </button>
-            </div>
+            @if (getFilteredSlots().length === 0) {
+              <div class="no-data">
+                <mat-icon>search_off</mat-icon>
+                <p>No availability slots found matching the current filters.</p>
+                @if (getActiveSlotFiltersCount() > 0) {
+                  <button mat-button color="primary" (click)="clearSlotFilters()">
+                    Clear Filters
+                  </button>
+                }
+              </div>
+            }
           </mat-card-content>
         </mat-card>
       </div>

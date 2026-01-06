@@ -6,7 +6,7 @@
       <mat-icon>spa</mat-icon>
       <div>
         <h3>{{ data.service.name }}</h3>
-        <span class="price">${{ data.service.price }}</span>
+        <span class="price">{{ data.service.price }} PLN</span>
       </div>
     </div>
 
@@ -25,12 +25,14 @@
       <mat-label>Location / Address</mat-label>
       <input matInput formControlName="location" placeholder="Enter the address for your appointment" required>
       <mat-icon matPrefix>location_on</mat-icon>
-      <mat-error *ngIf="bookingForm.get('location')?.hasError('required')">
-        Location is required
-      </mat-error>
-      <mat-error *ngIf="bookingForm.get('location')?.hasError('minlength')">
-        Please enter a complete address
-      </mat-error>
+
+      @if (bookingForm.get('location')?.hasError('required')) {
+        <mat-error>Location is required</mat-error>
+      }
+
+      @if (bookingForm.get('location')?.hasError('minlength')) {
+        <mat-error>Please enter a complete address</mat-error>
+      }
     </mat-form-field>
 
     <mat-form-field appearance="outline" class="full-width">
@@ -39,12 +41,26 @@
       <mat-icon matPrefix>notes</mat-icon>
       <mat-hint align="end">{{bookingForm.get('description')?.value?.length || 0}}/500</mat-hint>
     </mat-form-field>
+
+    <div class="terms-container" style="margin-top: 16px; margin-bottom: 8px;">
+      <mat-checkbox formControlName="acceptsTerms" color="primary">
+        I accept the Terms & Conditions and agree to pay
+        <strong>{{ data.service.price }} PLN</strong>.
+      </mat-checkbox>
+
+      @if (bookingForm.get('acceptsTerms')?.invalid && bookingForm.get('acceptsTerms')?.touched) {
+        <mat-error style="font-size: 12px; margin-top: 4px; display: block; color: #f44336;">
+          You must accept the terms to book.
+        </mat-error>
+      }
+    </div>
+
   </form>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
   <button mat-button (click)="onCancel()">Cancel</button>
   <button mat-raised-button color="primary" (click)="onSubmit()" [disabled]="bookingForm.invalid">
-    Proceed to Payment
+    Book Appointment
   </button>
 </mat-dialog-actions>

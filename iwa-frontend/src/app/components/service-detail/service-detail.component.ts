@@ -88,7 +88,8 @@ export class ServiceDetailComponent implements OnInit {
           slotId: slot.slotId,
           serviceId: this.service!.serviceId,
           location: result.location,
-          description: result.description
+          description: result.description,
+          acceptsTerms: result.acceptsTerms
         };
 
         this.processBooking(bookingData);

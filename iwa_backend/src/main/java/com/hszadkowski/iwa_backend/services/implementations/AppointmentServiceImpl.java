@@ -562,8 +562,18 @@ public class AppointmentServiceImpl implements AppointmentService {
     }
 
     private AppointmentResponseDto mapToResponseDto(Appointment appointment) {
+        String paymentStatus = "UNPAID";
+        String paymentMethod = null;
+        Integer paymentId = null;
 
-        String paymentStatus = (appointment.getPayment() != null) ? appointment.getPayment().getStatus() : "UNPAID";
+        if (appointment.getPayment() != null) {
+            paymentStatus = appointment.getPayment().getStatus();
+            paymentId = appointment.getPayment().getPaymentId();
+
+            if (appointment.getPayment().getPaymentMethod() != null) {
+                paymentMethod = appointment.getPayment().getPaymentMethod().name();
+            }
+        }
 
         return new AppointmentResponseDto(
                 appointment.getAppointmentId(),
@@ -578,7 +588,9 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getLocation(),
                 appointment.getScheduledAt(),
                 appointment.getDescription(),
-                paymentStatus
+                paymentStatus,
+                paymentMethod,
+                paymentId
         );
     }
 }

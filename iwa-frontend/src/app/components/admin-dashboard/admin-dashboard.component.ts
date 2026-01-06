@@ -20,6 +20,7 @@ import {FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators} fr
 import {ApiService} from '../../services/api.service';
 import {ConfirmDialogComponent} from '../dialogs/confirm-dialog/confirm-dialog.component';
 import {AvailabilitySlotResponseDto} from '../../interfaces/availability.dto';
+import { PaymentService } from '../../services/payment.service';
 
 interface Appointment {
   appointmentId: number;
@@ -34,6 +35,9 @@ interface Appointment {
   location: string;
   scheduledAt: string;
   description: string;
+  paymentId?: number;
+  paymentStatus?: string;
+  paymentMethod?: string;
 }
 
 interface Service {
@@ -165,6 +169,7 @@ export class AdminDashboardComponent implements OnInit {
 
   constructor(
     private apiService: ApiService,
+    private paymentService: PaymentService,
     private fb: FormBuilder,
     private snackBar: MatSnackBar,
     private dialog: MatDialog
@@ -245,6 +250,28 @@ export class AdminDashboardComponent implements OnInit {
       error: (error) => {
         console.error('Error loading services:', error);
         this.snackBar.open('Failed to load services', 'Close', {duration: 3000});
+      }
+    });
+  }
+
+  markAsPaid(paymentId: number | undefined): void {
+    if (!paymentId) return;
+
+    if (!confirm('Confirm receiving cash payment? This will generate an invoice.')) return;
+
+    this.paymentService.confirmCashPayment(paymentId).subscribe({
+      next: () => {
+        this.snackBar.open('Payment confirmed! Invoice sent to user.', 'Close', {
+          duration: 5000,
+          panelClass: ['success-snackbar']
+        });
+        this.loadAppointments(); // Refresh list
+      },
+      error: (err) => {
+        console.error('Payment confirmation failed', err);
+        this.snackBar.open('Failed to confirm payment.', 'Close', {
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }
