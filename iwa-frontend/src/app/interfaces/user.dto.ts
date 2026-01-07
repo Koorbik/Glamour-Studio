@@ -3,10 +3,12 @@ export interface UserProfileDto {
   surname: string;
   email: string;
   phoneNum: string;
+  smsNotificationsEnabled: boolean;
 }
 
 export interface UserProfileUpdateDto {
   name: string;
   surname: string;
   phoneNum: string;
+  smsNotificationsEnabled: boolean;
 }

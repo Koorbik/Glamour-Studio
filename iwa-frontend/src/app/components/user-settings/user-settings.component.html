@@ -70,6 +70,15 @@
                   <mat-error>Please enter a valid phone number</mat-error>
                 }
               </mat-form-field>
+
+              <div class="form-field full-width" style="margin-top: 10px; margin-bottom: 20px;">
+                <mat-slide-toggle formControlName="smsNotificationsEnabled" color="primary">
+                  Enable SMS Notifications
+                </mat-slide-toggle>
+                <mat-hint style="display: block; font-size: 12px; color: rgba(0,0,0,0.6); margin-top: 5px;">
+                  Receive text messages for appointment reminders and updates.
+                </mat-hint>
+              </div>
             </div>
 
             <div class="form-actions">
@@ -94,7 +103,6 @@
         </mat-card-content>
       </mat-card>
 
-      <!-- Google Calendar Integration Card -->
       <mat-card class="calendar-sync-card">
         <mat-card-header>
           <mat-card-title>

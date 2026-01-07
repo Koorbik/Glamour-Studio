@@ -34,6 +34,9 @@ public class AppUser {
     private LocalDateTime passwordResetCodeExpiresAt;
     private boolean enabled;
 
+    @Column(name = "sms_notifications_enabled")
+    private boolean smsNotificationsEnabled = false;
+
     @OneToMany(mappedBy = "appUser")
     private List<Appointment> appointments;
 

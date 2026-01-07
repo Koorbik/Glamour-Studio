@@ -15,4 +15,5 @@ public class GoogleUserDto {
     private String familyName;
     private String accessToken;
     private String phoneNum;
+    private boolean smsNotificationsEnabled;
 }

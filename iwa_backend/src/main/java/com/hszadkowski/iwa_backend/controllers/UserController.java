@@ -44,7 +44,7 @@ public class UserController {
         AppUser currentUser = (AppUser) authentication.getPrincipal();
         return ResponseEntity.ok(currentUser);
     }
-    
+
     @GetMapping("/users/profile")
     public ResponseEntity<UserProfileDto> getUserProfile() {
         try {
@@ -52,24 +52,25 @@ public class UserController {
             if (authentication == null || authentication.getName() == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-            
+
             String userEmail = authentication.getName();
             System.out.println("Getting profile for user: " + userEmail);
-            
+
             AppUser user = userService.findByEmail(userEmail);
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
             }
-            
+
             UserProfileDto profile = UserProfileDto.builder()
                     .name(user.getName())
                     .surname(user.getSurname())
                     .email(user.getEmail())
                     .phoneNum(user.getPhoneNum())
+                    .smsNotificationsEnabled(user.isSmsNotificationsEnabled())
                     .build();
-                    
+
             System.out.println("Profile data: " + profile);
-            
+
             return ResponseEntity.ok(profile);
         } catch (Exception e) {
             System.err.println("Error getting user profile: " + e.getMessage());
@@ -77,21 +78,22 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-    
+
     @PutMapping("/users/profile")
     public ResponseEntity<UserProfileDto> updateUserProfile(@Valid @RequestBody UserProfileUpdateDto updateDto) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
-        
+
         AppUser updatedUser = userService.updateUserProfile(userEmail, updateDto);
-        
+
         UserProfileDto profile = UserProfileDto.builder()
                 .name(updatedUser.getName())
                 .surname(updatedUser.getSurname())
                 .email(updatedUser.getEmail())
                 .phoneNum(updatedUser.getPhoneNum())
+                .smsNotificationsEnabled(updatedUser.isSmsNotificationsEnabled())
                 .build();
-                
+
         return ResponseEntity.ok(profile);
     }
 

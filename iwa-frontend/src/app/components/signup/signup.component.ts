@@ -16,6 +16,7 @@ import { Subscription, take } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { CustomValidators } from '../../utils/validators';
 import { PhoneFormatDirective } from '../../directives/phone-format.directive';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 
 @Component({
   selector: 'app-signup',
@@ -32,7 +33,8 @@ import { PhoneFormatDirective } from '../../directives/phone-format.directive';
     MatIconModule,
     MatDividerModule,
     MatProgressSpinnerModule,
-    PhoneFormatDirective
+    PhoneFormatDirective,
+    MatCheckboxModule
   ],
   templateUrl: './signup.component.html',
   styleUrls: ['./signup.component.scss']
@@ -87,6 +89,7 @@ export class SignupComponent implements OnInit, AfterViewInit, OnDestroy {
         Validators.minLength(8),
         CustomValidators.strongPassword()
       ]],
+      smsNotificationsEnabled: [false]
     });
   }
 
@@ -158,13 +161,17 @@ export class SignupComponent implements OnInit, AfterViewInit, OnDestroy {
       this.errorMessage = null;
       const formValue = this.signupForm.getRawValue();
 
+      const rawPhone = formValue.phoneNum || '';
+      const cleanPhone = rawPhone.replace(/[\s-]/g, '');
+
       // Clean up the form values
       const signupData = {
         name: formValue.name.trim(),
         surname: formValue.surname.trim(),
         email: formValue.email.trim(),
-        phoneNum: formValue.phoneNum.trim(),
-        password: formValue.password
+        phoneNum: cleanPhone,
+        password: formValue.password,
+        smsNotificationsEnabled: formValue.smsNotificationsEnabled
       };
 
       console.log('Attempting signup with email:', signupData.email);
@@ -177,6 +184,8 @@ export class SignupComponent implements OnInit, AfterViewInit, OnDestroy {
           return;
         }
 
+
+
         const googleUser = {
           accessToken: oauthToken,
           email: signupData.email,
@@ -184,6 +193,7 @@ export class SignupComponent implements OnInit, AfterViewInit, OnDestroy {
           givenName: signupData.name,
           familyName: signupData.surname,
           phoneNum: signupData.phoneNum,
+          smsNotificationsEnabled: signupData.smsNotificationsEnabled,
           id: ''
         };
 

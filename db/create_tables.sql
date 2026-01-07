@@ -14,6 +14,7 @@ CREATE TABLE "public"."app_users"
     "verification_code"              varchar,
     "verification_code_expires_at"   timestamp,
     "enabled"                        boolean          DEFAULT FALSE,
+    "sms_notifications_enabled" boolean DEFAULT FALSE,
     "password_reset_code"            varchar,
     "password_reset_code_expires_at" timestamp
 );

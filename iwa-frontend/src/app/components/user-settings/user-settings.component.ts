@@ -63,7 +63,8 @@ export class UserSettingsComponent implements OnInit {
       name: ['', [Validators.required, Validators.minLength(2)]],
       surname: ['', [Validators.required, Validators.minLength(2)]],
       email: [{value: '', disabled: true}, [Validators.required, Validators.email]],
-      phoneNum: ['', [Validators.required, Validators.pattern(/^\+?[1-9]\d{1,14}$/)]]
+      phoneNum: ['', [Validators.required, Validators.pattern(/^\+?[1-9]\d{1,14}$/)]],
+      smsNotificationsEnabled: [false] // Added this field
     });
   }
 
@@ -81,7 +82,8 @@ export class UserSettingsComponent implements OnInit {
           name: data.name || '',
           surname: data.surname || '',
           email: data.email || '',
-          phoneNum: data.phoneNum || ''
+          phoneNum: data.phoneNum || '',
+          smsNotificationsEnabled: data.smsNotificationsEnabled || false // Patch value
         });
         this.isLoading.set(false);
       },
@@ -96,7 +98,6 @@ export class UserSettingsComponent implements OnInit {
             verticalPosition: 'top',
             panelClass: ['error-snackbar']
           });
-          // Use AuthService to logout properly
           this.authService.logout();
         } else {
           this.snackBar.open('Failed to load profile data', 'Close', {
@@ -130,7 +131,8 @@ export class UserSettingsComponent implements OnInit {
       const updateData: UserProfileUpdateDto = {
         name: this.profileForm.get('name')?.value,
         surname: this.profileForm.get('surname')?.value,
-        phoneNum: this.profileForm.get('phoneNum')?.value
+        phoneNum: this.profileForm.get('phoneNum')?.value,
+        smsNotificationsEnabled: this.profileForm.get('smsNotificationsEnabled')?.value // Add this
       };
 
       this.apiService.put<UserProfileDto>('users/profile', updateData).subscribe({
@@ -165,7 +167,8 @@ export class UserSettingsComponent implements OnInit {
         name: profile.name || '',
         surname: profile.surname || '',
         email: profile.email || '',
-        phoneNum: profile.phoneNum || ''
+        phoneNum: profile.phoneNum || '',
+        smsNotificationsEnabled: profile.smsNotificationsEnabled || false // Reset value
       });
       this.profileForm.markAsPristine();
     }
@@ -195,8 +198,6 @@ export class UserSettingsComponent implements OnInit {
         });
         this.loadCalendarSyncStatus();
         this.isSyncingCalendar.set(false);
-
-        // Optionally sync all existing appointments
         this.syncAllAppointments();
       },
       error: (err) => {

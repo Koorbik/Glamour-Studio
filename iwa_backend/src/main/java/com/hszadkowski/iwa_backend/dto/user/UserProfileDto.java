@@ -14,4 +14,5 @@ public class UserProfileDto {
     private String surname;
     private String email;
     private String phoneNum;
+    private boolean smsNotificationsEnabled;
 }

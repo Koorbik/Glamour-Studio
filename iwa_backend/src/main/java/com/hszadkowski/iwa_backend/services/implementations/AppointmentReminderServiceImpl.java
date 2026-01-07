@@ -6,13 +6,14 @@ import com.hszadkowski.iwa_backend.repos.AppointmentRepository;
 import com.hszadkowski.iwa_backend.repos.AppointmentStatusRepository;
 import com.hszadkowski.iwa_backend.services.interfaces.AppointmentReminderService;
 import com.hszadkowski.iwa_backend.services.interfaces.EmailService;
+import com.hszadkowski.iwa_backend.services.interfaces.EmailTemplateService;
+import com.hszadkowski.iwa_backend.services.interfaces.SmsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -22,7 +23,9 @@ public class AppointmentReminderServiceImpl implements AppointmentReminderServic
 
     private final AppointmentRepository appointmentRepository;
     private final EmailService emailService;
+    private final EmailTemplateService emailTemplateService;
     private final AppointmentStatusRepository appointmentStatusRepository;
+    private final SmsService smsService;
 
     /**
      * Runs every day at 10:00 AM to send reminders for appointments scheduled for tomorrow
@@ -51,7 +54,7 @@ public class AppointmentReminderServiceImpl implements AppointmentReminderServic
 
         for (Appointment appointment : tomorrowAppointments) {
             try {
-                sendReminderEmail(appointment);
+                sendReminder(appointment);
                 log.info("Reminder sent for appointment ID: {}", appointment.getAppointmentId());
             } catch (Exception e) {
                 log.error("Failed to send reminder for appointment ID: {} - Error: {}",
@@ -62,51 +65,28 @@ public class AppointmentReminderServiceImpl implements AppointmentReminderServic
         log.info("Daily reminder process completed");
     }
 
-    private void sendReminderEmail(Appointment appointment) {
+    private void sendReminder(Appointment appointment) {
         try {
             String subject = "Reminder: Your appointment is tomorrow - " + appointment.getService().getName();
-            String htmlMessage = buildReminderEmailHtml(appointment);
+            String htmlMessage = emailTemplateService.buildReminderEmailHtml(appointment);
             emailService.sendVerificationEmail(appointment.getAppUser().getEmail(), subject, htmlMessage);
+
+            String phoneNumber = appointment.getAppUser().getPhoneNum();
+            if (phoneNumber != null && !phoneNumber.isEmpty()) {
+                String smsMessage = String.format("Hi %s, reminder for your appointment tomorrow at %s. Service: %s. See you soon! - Glamour Studio",
+                        appointment.getAppUser().getName(),
+                        appointment.getSlot().getStartTime().toLocalTime(),
+                        appointment.getService().getName()
+                );
+
+                smsService.sendSms(phoneNumber, smsMessage);
+            }
+
         } catch (Exception e) {
-            throw new RuntimeException("Failed to send reminder email", e);
+            log.error("Failed to send notification for appointment ID: {} - Error: {}",
+                    appointment.getAppointmentId(), e.getMessage());
         }
     }
 
-    private String buildReminderEmailHtml(Appointment appointment) {
-        LocalDateTime appointmentDateTime = appointment.getSlot().getStartTime();
 
-        return "<html>"
-                + "<body style=\"font-family: Arial, sans-serif;\">"
-                + "<div style=\"background-color: #f5f5f5; padding: 20px;\">"
-                + "<h2 style=\"color: #333;\">🔔 Appointment Reminder</h2>"
-                + "<p style=\"font-size: 16px;\">Hi " + appointment.getAppUser().getName() + ",</p>"
-                + "<p style=\"font-size: 16px;\">This is a friendly reminder that you have an appointment scheduled for <strong>tomorrow</strong>!</p>"
-                + "<div style=\"background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); border-left: 4px solid #007bff;\">"
-                + "<h3 style=\"color: #333; margin-top: 0;\">Appointment Details:</h3>"
-                + "<p><strong>Service:</strong> " + appointment.getService().getName() + "</p>"
-                + "<p><strong>Date:</strong> " + appointment.getScheduledAt() + "</p>"
-                + "<p><strong>Time:</strong> " + appointmentDateTime.toLocalTime() + "</p>"
-                + "<p><strong>Duration:</strong> " + appointment.getService().getDurationMin() + " minutes</p>"
-                + "<p><strong>Location:</strong> " + appointment.getLocation() + "</p>"
-                + (appointment.getDescription() != null && !appointment.getDescription().trim().isEmpty()
-                ? "<p><strong>Notes:</strong> " + appointment.getDescription() + "</p>" : "")
-                + "</div>"
-                + "<div style=\"background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-top: 20px;\">"
-                + "<h4 style=\"color: #1976d2; margin-top: 0;\">💡 Preparation Tips:</h4>"
-                + "<ul style=\"color: #333; padding-left: 20px;\">"
-                + "<li>Please arrive 5-10 minutes early</li>"
-                + "<li>Come with a clean face (if applicable)</li>"
-                + "<li>Bring any specific makeup preferences or inspiration photos</li>"
-                + "</ul>"
-                + "</div>"
-                + "<p style=\"font-size: 14px; margin-top: 20px; color: #666;\">"
-                + "Need to reschedule or cancel? Please contact us as soon as possible or use your account dashboard."
-                + "</p>"
-                + "<p style=\"font-size: 14px; color: #666;\">"
-                + "We look forward to seeing you tomorrow!"
-                + "</p>"
-                + "</div>"
-                + "</body>"
-                + "</html>";
-    }
 }
