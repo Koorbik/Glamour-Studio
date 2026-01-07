@@ -64,6 +64,9 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
+        validatedGoogleUser.setPhoneNum(googleUser.getPhoneNum());
+        validatedGoogleUser.setSmsNotificationsEnabled(googleUser.isSmsNotificationsEnabled());
+
         UserSignUpResponseDto registeredGoogleUser = authenticationService.signUpGoogleUser(validatedGoogleUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(registeredGoogleUser);
     }

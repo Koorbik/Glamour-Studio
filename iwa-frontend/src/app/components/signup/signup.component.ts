@@ -192,8 +192,8 @@ export class SignupComponent implements OnInit, AfterViewInit, OnDestroy {
           name: signupData.name,
           givenName: signupData.name,
           familyName: signupData.surname,
-          phoneNum: cleanPhone,
-          smsNotificationsEnabled: formValue.smsNotificationsEnabled,
+          phoneNum: signupData.phoneNum,
+          smsNotificationsEnabled: signupData.smsNotificationsEnabled,
           id: ''
         };
 
