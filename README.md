@@ -39,13 +39,19 @@ A full-stack web application for booking makeup artist appointments, featuring u
 - [x] Password encryption with BCrypt
 - [x] User profile management
 
-### 💳 Payment Integration
+### 💳 Payment & Invoicing
 - [x] PayU payment gateway integration
 - [x] Secure payment order creation
 - [x] Webhook notifications with MD5 signature verification
 - [x] Payment status tracking (PENDING, COMPLETED, CANCELED)
 - [x] Automatic payment confirmation
+- [x] Automatic invoice generation and download (Zoho Books)
 - [x] Integration with appointment system
+
+### 🔔 Notifications
+- [x] SMS notifications
+- [x] Email notifications
+- [x] Notification preferences
 
 ### 📅 Appointment System
 - [x] Service browsing and selection
@@ -256,6 +262,14 @@ JWT_EXPIRATION=86400000
 SUPPORT_EMAIL=your_email@gmail.com
 APP_PASSWORD=your_gmail_app_password
 
+OR
+
+# Mail Gun Email (REQUIRED IF YOU WANT TO USE MAILGUN)
+MAILGUN_HOSTNAME=smtp.mailgun.org
+MAILGUN_PORT=587
+MAILGUN_LOGIN=
+MAILGUN_PASSWORD=
+
 # Google Calendar OAuth (optional)
 GOOGLE_CALENDAR_CLIENT_ID=your_client_id
 GOOGLE_CALENDAR_SECRET=your_client_secret
@@ -268,6 +282,21 @@ PAYU_OAUTH_CLIENT_ID=your_payu_client_id
 PAYU_OAUTH_CLIENT_SECRET=your_payu_client_secret
 PAYU_POS_ID=your_payu_pos_id
 PAYU_SECOND_KEY_MD5=your_payu_second_key
+
+# Zoho Invoicing Service
+ZOHO_CLIENT_ID=
+ZOHO_CLIENT_SECRET=
+ZOHO_REFRESH_TOKEN=
+ZOHO_ORGANIZATION_ID=
+ZOHO_API_BASE_URL=https://www.zohoapis.eu/invoice/v3
+ZOHO_AUTH_URL=https://accounts.zoho.eu/oauth/v2/token
+ZOHO_GENERIC_CUSTOMER_ID=
+
+# Twilio SMS Service (REQUIRED FOR SMS NOTIFICATIONS)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
 # ⚠️ IMPORTANT: Use ngrok HTTPS URL here, NOT localhost!
 # Run: ngrok http 8080
 # Then copy the HTTPS URL (e.g., https://abc123.ngrok-free.app)
@@ -289,15 +318,19 @@ JWT_EXPIRATION=86400000
 SUPPORT_EMAIL=your_email@gmail.com
 APP_PASSWORD=your_gmail_app_password
 
+OR
+
+# Mail Gun Email (REQUIRED IF YOU WANT TO USE MAILGUN)
+MAILGUN_HOSTNAME=smtp.mailgun.org
+MAILGUN_PORT=587
+MAILGUN_LOGIN=
+MAILGUN_PASSWORD=
+
 # Google Calendar OAuth (optional)
 GOOGLE_CALENDAR_CLIENT_ID=your_client_id
 GOOGLE_CALENDAR_SECRET=your_client_secret
 GOOGLE_AUTH_CLIENT_ID=your_auth_client_id
 GOOGLE_AUTH_FRONTEND_CLIENT_ID=your_frontend_client_id
-
-# Facebook OAuth (optional)
-FACEBOOK_APP_ID=your_app_id
-FACEBOOK_APP_SECRET=your_app_secret
 
 # PayU Configuration (REQUIRED for payments)
 PAYU_BASE_URL=https://secure.snd.payu.com
@@ -305,6 +338,21 @@ PAYU_OAUTH_CLIENT_ID=your_payu_client_id
 PAYU_OAUTH_CLIENT_SECRET=your_payu_client_secret
 PAYU_POS_ID=your_payu_pos_id
 PAYU_SECOND_KEY_MD5=your_payu_second_key
+
+# Zoho Invoicing Service
+ZOHO_CLIENT_ID=
+ZOHO_CLIENT_SECRET=
+ZOHO_REFRESH_TOKEN=
+ZOHO_ORGANIZATION_ID=
+ZOHO_API_BASE_URL=https://www.zohoapis.eu/invoice/v3
+ZOHO_AUTH_URL=https://accounts.zoho.eu/oauth/v2/token
+ZOHO_GENERIC_CUSTOMER_ID=
+
+# Twilio SMS Service (REQUIRED FOR SMS NOTIFICATIONS)
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=
+
 # ⚠️ IMPORTANT: Use ngrok HTTPS URL here, NOT localhost!
 # Run: ngrok http 8080
 # Then copy the HTTPS URL (e.g., https://abc123.ngrok-free.app)
@@ -322,12 +370,6 @@ Environment settings in `iwa-frontend/src/environments/`:
 - Production/development flags
 
 ## 🎯 Future Enhancements
-
-### 🔔 Enhanced Notifications
-- [ ] SMS notifications
-- [ ] WhatsApp integration
-- [ ] Email templates customization
-- [ ] Notification preferences
 
 ### 📊 Analytics & Reporting
 - [ ] Business analytics dashboard
