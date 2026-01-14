@@ -1,23 +1,24 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
-import { MatButtonModule } from '@angular/material/button';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { Observable } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import {Component, OnInit} from '@angular/core';
+import {ActivatedRoute, Router, RouterLink} from '@angular/router';
+import {CommonModule} from '@angular/common';
+import {MatCardModule} from '@angular/material/card';
+import {MatListModule} from '@angular/material/list';
+import {MatButtonModule} from '@angular/material/button';
+import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
+import {MatIconModule} from '@angular/material/icon';
+import {MatDialog, MatDialogModule} from '@angular/material/dialog';
+import {Observable} from 'rxjs';
+import {switchMap} from 'rxjs/operators';
 
-import { ApiService } from '../../services/api.service';
-import { AuthService } from '../../services/auth.service';
-import { PaymentService } from '../../services/payment.service';
+import {ApiService} from '../../services/api.service';
+import {AuthService} from '../../services/auth.service';
+import {PaymentService} from '../../services/payment.service';
 
-import { ServiceResponseDto } from '../../interfaces/service.dto';
-import { AvailabilitySlotResponseDto } from '../../interfaces/availability.dto';
-import { BookAppointmentDto, AppointmentResponseDto } from '../../interfaces/appointment.dto';
-import { BookingDialogComponent } from '../dialogs/booking-dialog/booking-dialog.component';
+import {ServiceResponseDto} from '../../interfaces/service.dto';
+import {AvailabilitySlotResponseDto} from '../../interfaces/availability.dto';
+import {BookAppointmentDto, AppointmentResponseDto} from '../../interfaces/appointment.dto';
+import {BookingDialogComponent} from '../dialogs/booking-dialog/booking-dialog.component';
+import {ReviewResponseDto} from '../../interfaces/review.dto';
 
 @Component({
   selector: 'app-service-detail',
@@ -40,6 +41,8 @@ export class ServiceDetailComponent implements OnInit {
   availableSlots: AvailabilitySlotResponseDto[] = [];
   isLoggedIn$: Observable<boolean>;
   isLoggedIn = false;
+  reviews: ReviewResponseDto[] = [];
+  averageRating = 0;
 
   today = new Date().toISOString();
   farFuture = new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
@@ -67,6 +70,11 @@ export class ServiceDetailComponent implements OnInit {
       const queryString = `serviceId=${serviceId}&startTime=${this.today}&endTime=${this.farFuture}`;
       this.apiService.get<AvailabilitySlotResponseDto[]>(`availability?${queryString}`).subscribe(slots => {
         this.availableSlots = slots;
+      });
+
+      this.apiService.get<ReviewResponseDto[]>(`reviews/service/${serviceId}`).subscribe(data => {
+        this.reviews = data;
+        this.calculateAverageRating();
       });
     }
   }
@@ -124,6 +132,15 @@ export class ServiceDetailComponent implements OnInit {
           this.ngOnInit();
         }
       });
+  }
+
+  private calculateAverageRating(): void {
+    if (this.reviews.length === 0) {
+      this.averageRating = 0;
+      return;
+    }
+    const total = this.reviews.reduce((acc, review) => acc + review.rating, 0);
+    this.averageRating = total / this.reviews.length;
   }
 
   showLoginPrompt(): void {

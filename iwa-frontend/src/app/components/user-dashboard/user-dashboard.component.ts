@@ -18,6 +18,7 @@ import { PaymentService } from '../../services/payment.service';
 import { AppointmentResponseDto } from '../../interfaces/appointment.dto';
 import { RescheduleDialogComponent } from './reschedule-dialog/reschedule-dialog.component';
 import { CancelConfirmDialogComponent } from './cancel-confirm-dialog/cancel-confirm-dialog.component';
+import { ReviewDialogComponent } from '../dialogs/review-dialog/review-dialog.component';
 
 interface AppointmentWithSyncStatus extends AppointmentResponseDto {
   isSyncing?: boolean;
@@ -238,6 +239,20 @@ export class UserDashboardComponent implements OnInit {
     });
   }
 
+  openReviewDialog(appointmentId: number): void {
+    const dialogRef = this.dialog.open(ReviewDialogComponent, {
+      width: '400px',
+      data: { appointmentId }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Refresh the appointments list to show the new review state (hide the button)
+        this.loadAppointments();
+      }
+    });
+  }
+
   cancelAppointment(appointment: AppointmentResponseDto): void {
     this.apiService.put(`appointments/${appointment.appointmentId}/cancel`, {}).subscribe({
       next: () => {
@@ -303,3 +318,4 @@ export class UserDashboardComponent implements OnInit {
   }
 
 }
+

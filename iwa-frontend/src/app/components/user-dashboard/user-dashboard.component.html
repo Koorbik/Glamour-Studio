@@ -330,6 +330,20 @@
                         <span>View Details</span>
                       </button>
                     }
+
+                    @if (appointment.status === 'COMPLETED' && !appointment.review) {
+                      <button mat-stroked-button color="accent" class="action-button rate-btn" (click)="openReviewDialog(appointment.appointmentId)">
+                        <mat-icon>star_rate</mat-icon>
+                        <span>Rate Service</span>
+                      </button>
+                    }
+
+                    @if (appointment.review) {
+                      <span class="review-badge">
+                        <mat-icon>check_circle</mat-icon>
+                        You rated this {{ appointment.review.rating }}/5
+                      </span>
+                    }
                   </div>
                 </mat-card>
               }
