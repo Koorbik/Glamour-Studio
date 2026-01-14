@@ -4,6 +4,7 @@ import com.hszadkowski.iwa_backend.dto.appointment.AppointmentResponseDto;
 import com.hszadkowski.iwa_backend.dto.appointment.BookAppointmentDto;
 import com.hszadkowski.iwa_backend.dto.appointment.RescheduleAppointmentDto;
 import com.hszadkowski.iwa_backend.dto.appointment.UpdateAppointmentStatusDto;
+import com.hszadkowski.iwa_backend.dto.review.ReviewResponseDto;
 import com.hszadkowski.iwa_backend.exceptions.AppointmentNotFoundException;
 import com.hszadkowski.iwa_backend.models.*;
 import com.hszadkowski.iwa_backend.repos.*;
@@ -508,6 +509,20 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.error("Failed to send cancellation email: {}", e.getMessage());
         }
     }
+    private ReviewResponseDto mapReviewToDto(Review review) {
+        String authorName = review.getAppUser().getName();
+        if (review.getAppUser().getSurname() != null && !review.getAppUser().getSurname().isEmpty()) {
+            authorName += " " + review.getAppUser().getSurname().charAt(0) + ".";
+        }
+
+        return ReviewResponseDto.builder()
+                .reviewId(review.getReviewId())
+                .authorName(authorName)
+                .rating(review.getRating())
+                .comment(review.getComment())
+                .createdAt(review.getCreatedAt())
+                .build();
+    }
 
     private AppointmentResponseDto mapToResponseDto(Appointment appointment) {
         String paymentStatus = "UNPAID";
@@ -522,6 +537,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 paymentMethod = appointment.getPayment().getPaymentMethod().name();
             }
         }
+
+        ReviewResponseDto reviewDto = mapReviewToDto(appointment.getReview());
 
         return new AppointmentResponseDto(
                 appointment.getAppointmentId(),
@@ -538,7 +555,8 @@ public class AppointmentServiceImpl implements AppointmentService {
                 appointment.getDescription(),
                 paymentStatus,
                 paymentMethod,
-                paymentId
+                paymentId,
+                reviewDto
         );
     }
 }

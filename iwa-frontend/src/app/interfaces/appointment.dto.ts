@@ -1,3 +1,5 @@
+import {ReviewResponseDto} from './review.dto';
+
 export interface AppointmentResponseDto {
   appointmentId: number;
   userId?: number;
@@ -16,6 +18,7 @@ export interface AppointmentResponseDto {
   lastCalendarSync?: string;
   paymentStatus?: string;
   paymentMethod?: string;
+  review?: ReviewResponseDto;
 }
 
 export interface BookAppointmentDto {

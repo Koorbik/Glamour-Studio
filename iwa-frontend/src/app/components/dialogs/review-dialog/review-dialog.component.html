@@ -1,0 +1,31 @@
+<h2 mat-dialog-title>Rate Your Experience</h2>
+<mat-dialog-content>
+  <div class="rating-container">
+    <div class="stars">
+      @for (star of stars; track star) {
+        <mat-icon
+          (mouseenter)="hoverRating = star"
+          (mouseleave)="hoverRating = 0"
+          (click)="setRating(star)"
+          [class.filled]="star <= (hoverRating || rating)">
+          {{ star <= (hoverRating || rating) ? 'star' : 'star_border' }}
+        </mat-icon>
+      }
+    </div>
+    <p class="rating-text">
+      {{ rating > 0 ? 'You rated: ' + rating + '/5' : 'Select a rating' }}
+    </p>
+  </div>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Write a comment (optional)</mat-label>
+    <textarea matInput [(ngModel)]="comment" rows="4" placeholder="How was your service?"></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close [disabled]="isSubmitting">Cancel</button>
+  <button mat-raised-button color="primary" (click)="submitReview()" [disabled]="isSubmitting || rating === 0">
+    Submit Review
+  </button>
+</mat-dialog-actions>

@@ -1,5 +1,6 @@
 package com.hszadkowski.iwa_backend.dto.appointment;
 
+import com.hszadkowski.iwa_backend.dto.review.ReviewResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,4 +28,5 @@ public class AppointmentResponseDto {
     private String paymentStatus;
     private String paymentMethod;
     private Integer paymentId;
+    private ReviewResponseDto review;
 }
