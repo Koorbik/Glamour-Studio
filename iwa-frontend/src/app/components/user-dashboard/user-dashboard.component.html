@@ -339,10 +339,15 @@
                     }
 
                     @if (appointment.review) {
-                      <span class="review-badge">
-                        <mat-icon>check_circle</mat-icon>
-                        You rated this {{ appointment.review.rating }}/5
-                      </span>
+                      <div class="user-rating-display">
+                        <span class="rating-label">Your Rating</span>
+                        <div class="stars">
+                          <mat-icon *ngFor="let star of [1,2,3,4,5]"
+                                    [class.filled]="star <= appointment.review.rating">
+                            {{ star <= appointment.review.rating ? 'star' : 'star_border' }}
+                          </mat-icon>
+                        </div>
+                      </div>
                     }
                   </div>
                 </mat-card>

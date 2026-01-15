@@ -510,6 +510,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
     }
     private ReviewResponseDto mapReviewToDto(Review review) {
+        if (review == null) {
+            return null;
+        }
+
         String authorName = review.getAppUser().getName();
         if (review.getAppUser().getSurname() != null && !review.getAppUser().getSurname().isEmpty()) {
             authorName += " " + review.getAppUser().getSurname().charAt(0) + ".";
