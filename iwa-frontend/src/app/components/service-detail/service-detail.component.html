@@ -1,6 +1,5 @@
 <div class="service-detail-page">
   @if (service) {
-    <!-- Hero Section -->
     <section class="service-hero">
       <div class="hero-overlay"></div>
       <div class="hero-content">
@@ -48,7 +47,6 @@
       </div>
     </section>
 
-    <!-- Booking Section -->
     <section class="booking-section">
       <div class="container">
         <div class="booking-header">
@@ -149,46 +147,47 @@
 
     <section class="reviews-section" *ngIf="service">
       <div class="container">
-        <h2>Client Reviews</h2>
+        <div class="reviews-header-container">
+          <h2>Client Reviews</h2>
 
-        <div class="reviews-summary">
-          <div class="average-rating">
-            <span class="score">{{ averageRating | number:'1.1-1' }}</span>
-            <div class="stars">
-              <mat-icon *ngFor="let star of [1,2,3,4,5]"
-                        [class.filled]="star <= averageRating">
-                {{ star <= averageRating ? 'star' : (star - averageRating < 1 ? 'star_half' : 'star_border') }}
-              </mat-icon>
+          <div class="rating-summary-card">
+            <div class="rating-number">{{ averageRating | number:'1.1-1' }}</div>
+            <div class="rating-info">
+              <div class="stars">
+                <mat-icon *ngFor="let star of [1,2,3,4,5]"
+                          [class.filled]="star <= averageRating">
+                  {{ star <= averageRating ? 'star' : (star - averageRating < 1 ? 'star_half' : 'star_border') }}
+                </mat-icon>
+              </div>
+              <span class="review-count">Based on {{ reviews.length }} reviews</span>
             </div>
-            <span class="count">({{ reviews.length }} reviews)</span>
           </div>
         </div>
 
         <div class="reviews-grid">
           @for (review of reviews; track review.reviewId) {
-            <mat-card class="review-card">
-              <mat-card-header>
-                <div mat-card-avatar class="review-avatar">
-                  {{ review.authorName.charAt(0) }}
+            <div class="review-item">
+              <div class="review-top">
+                <div class="reviewer-meta">
+                  <span class="name">{{ review.authorName }}</span>
+                  <span class="date">{{ review.createdAt | date:'MMM d, y' }}</span>
                 </div>
-                <mat-card-title>{{ review.authorName }}</mat-card-title>
-                <mat-card-subtitle>{{ review.createdAt | date:'mediumDate' }}</mat-card-subtitle>
-              </mat-card-header>
-              <mat-card-content>
-                <div class="review-rating">
+                <div class="review-stars">
                   <mat-icon *ngFor="let s of [1,2,3,4,5]" [class.filled]="s <= review.rating">star</mat-icon>
                 </div>
-                <p>{{ review.comment }}</p>
-              </mat-card-content>
-            </mat-card>
+              </div>
+              <p class="review-comment">{{ review.comment }}</p>
+            </div>
           } @empty {
-            <p class="no-reviews">No reviews yet. Be the first to rate this service!</p>
+            <div class="no-reviews-state">
+              <mat-icon>rate_review</mat-icon>
+              <p>No reviews yet. Be the first to share your experience!</p>
+            </div>
           }
         </div>
       </div>
     </section>
 
-    <!-- Benefits Section -->
     <section class="benefits-section">
       <div class="container">
         <h2>Why Choose Our {{ service.name }} Service?</h2>

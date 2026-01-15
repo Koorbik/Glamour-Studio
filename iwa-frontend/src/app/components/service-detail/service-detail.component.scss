@@ -567,6 +567,178 @@
   }
 }
 
+// --- NEW REVIEW SECTION STYLES ---
+
+.reviews-section {
+  padding: 6rem 0;
+  background: white; // Consistent with other white sections
+}
+
+.reviews-header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 4rem;
+
+  h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+}
+
+.rating-summary-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem 3rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 100px; // Pill shape for modern look
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: white;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  }
+
+  .rating-number {
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    color: #1e293b;
+  }
+
+  .rating-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .stars {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 0.25rem;
+
+      mat-icon {
+        color: #e2e8f0;
+        width: 24px;
+        height: 24px;
+        font-size: 24px;
+
+        &.filled {
+          color: #fbbf24; // Standard Amber/Gold for stars to pop
+        }
+      }
+    }
+
+    .review-count {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #64748b;
+    }
+  }
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 2rem;
+}
+
+.review-item {
+  background: white;
+  border-radius: 24px; // Matches .slot-card
+  padding: 2rem;
+  border: 2px solid #f1f5f9; // Matches .slot-card
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+  }
+
+  .review-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1rem;
+
+    .reviewer-meta {
+      display: flex;
+      flex-direction: column;
+
+      .name {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: #1e293b;
+        margin-bottom: 0.25rem;
+      }
+
+      .date {
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+    }
+
+    .review-stars {
+      display: flex;
+      gap: 2px;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #e2e8f0;
+
+        &.filled {
+          color: #fbbf24;
+        }
+      }
+    }
+  }
+
+  .review-comment {
+    color: #475569;
+    line-height: 1.6;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+.no-reviews-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4rem;
+  background: #f8fafc;
+  border-radius: 24px;
+  border: 2px dashed #e2e8f0;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #64748b;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+}
+
+// --- END NEW REVIEW SECTION STYLES ---
+
 @keyframes float {
   0%, 100% {
     transform: translateY(0) rotate(0deg);
@@ -635,6 +807,20 @@
 
   .benefits-grid {
     grid-template-columns: 1fr;
+  }
+
+  // Mobile Review adjustments
+  .rating-summary-card {
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 300px;
+
+    .rating-info {
+      align-items: center;
+    }
   }
 }
 
