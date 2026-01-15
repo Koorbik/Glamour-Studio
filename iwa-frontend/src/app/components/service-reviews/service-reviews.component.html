@@ -1,0 +1,59 @@
+<div class="reviews-page">
+  <div class="container">
+
+    <div class="page-header">
+      <a mat-button color="primary" [routerLink]="['/services', service?.serviceId]" class="back-link">
+        <mat-icon>arrow_back</mat-icon>
+        Back to {{ service?.name || 'Service' }}
+      </a>
+    </div>
+
+    @if (isLoading) {
+      <div class="loading-state">
+        <mat-spinner diameter="40"></mat-spinner>
+        <p>Loading reviews...</p>
+      </div>
+    } @else {
+      <div class="reviews-content">
+        <div class="reviews-header-container">
+          <h1>Reviews for {{ service?.name }}</h1>
+
+          <div class="rating-summary-card">
+            <div class="rating-number">{{ averageRating | number:'1.1-1' }}</div>
+            <div class="rating-info">
+              <div class="stars">
+                <mat-icon *ngFor="let star of [1,2,3,4,5]"
+                          [class.filled]="star <= averageRating">
+                  {{ star <= averageRating ? 'star' : (star - averageRating < 1 ? 'star_half' : 'star_border') }}
+                </mat-icon>
+              </div>
+              <span class="review-count">Based on {{ reviews.length }} reviews</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="reviews-grid">
+          @for (review of reviews; track review.reviewId) {
+            <div class="review-item">
+              <div class="review-top">
+                <div class="reviewer-meta">
+                  <span class="name">{{ review.authorName }}</span>
+                  <span class="date">{{ review.createdAt | date:'MMM d, y' }}</span>
+                </div>
+                <div class="review-stars">
+                  <mat-icon *ngFor="let s of [1,2,3,4,5]" [class.filled]="s <= review.rating">star</mat-icon>
+                </div>
+              </div>
+              <p class="review-comment">{{ review.comment }}</p>
+            </div>
+          } @empty {
+            <div class="no-reviews-state">
+              <mat-icon>rate_review</mat-icon>
+              <p>No reviews yet.</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -104,7 +104,8 @@
             <div class="empty-state">
               <mat-icon>event_busy</mat-icon>
               <h3>No Available Slots</h3>
-              <p>We're currently fully booked for the next few weeks. Please check back soon or contact us directly for special arrangements.</p>
+              <p>We're currently fully booked for the next few weeks. Please check back soon or contact us directly for
+                special arrangements.</p>
               <div class="empty-actions">
                 <button mat-raised-button color="primary" routerLink="/services">
                   <mat-icon>arrow_back</mat-icon>
@@ -127,7 +128,8 @@
               </div>
               <div class="prompt-text">
                 <h3>Ready to Book Your Appointment?</h3>
-                <p>Create an account or sign in to secure your preferred time slot and enjoy exclusive member benefits.</p>
+                <p>Create an account or sign in to secure your preferred time slot and enjoy exclusive member
+                  benefits.</p>
               </div>
               <div class="prompt-actions">
                 <button mat-raised-button color="primary" routerLink="/login">
@@ -165,7 +167,7 @@
         </div>
 
         <div class="reviews-grid">
-          @for (review of reviews; track review.reviewId) {
+          @for (review of reviews.slice(0, 3); track review.reviewId) {
             <div class="review-item">
               <div class="review-top">
                 <div class="reviewer-meta">
@@ -185,6 +187,17 @@
             </div>
           }
         </div>
+
+        @if (reviews.length > 3) {
+          <div class="view-all-container" style="text-align: center; margin-top: 4rem;">
+            <a mat-stroked-button color="primary"
+               [routerLink]="['/services', service.serviceId, 'reviews']"
+               style="padding: 1.5rem 3rem; border-radius: 50px; font-size: 1.1rem;">
+              View All {{ reviews.length }} Reviews
+              <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+            </a>
+          </div>
+        }
       </div>
     </section>
 

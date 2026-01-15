@@ -87,4 +87,6 @@ public class ReviewServiceImpl implements ReviewService {
                 .createdAt(review.getCreatedAt())
                 .build();
     }
+
+    // in the future add a method (with endpoint to actually calculate the average on backend side)
 }
