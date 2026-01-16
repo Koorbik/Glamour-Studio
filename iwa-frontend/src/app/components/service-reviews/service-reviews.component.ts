@@ -68,4 +68,8 @@ export class ServiceReviewsComponent implements OnInit {
     const total = this.reviews.reduce((acc, review) => acc + review.rating, 0);
     this.averageRating = total / this.reviews.length;
   }
+
+  openImage(url: string): void {
+    window.open(url, '_blank');
+  }
 }

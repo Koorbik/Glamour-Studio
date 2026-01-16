@@ -30,6 +30,8 @@ services:
     depends_on:
       make_up_service_db:
         condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
     networks:
       - iwa-network
     healthcheck:

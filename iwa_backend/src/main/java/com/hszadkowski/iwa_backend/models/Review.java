@@ -28,6 +28,13 @@ public class Review {
     private AppUser appUser;
 
     private Integer rating;
+
+    @Column(length = 1000)
     private String comment;
+
+    @Column(name = "attachment_url")
+    private String attachmentUrl;
+
+    @Column(name = "created_at")
     private LocalDate createdAt;
 }

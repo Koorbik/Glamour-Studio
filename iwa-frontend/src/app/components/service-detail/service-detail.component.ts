@@ -7,6 +7,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatIconModule} from '@angular/material/icon';
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner'; // <--- Added this import
 import {Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
 
@@ -31,7 +32,8 @@ import {ReviewResponseDto} from '../../interfaces/review.dto';
     MatButtonModule,
     MatSnackBarModule,
     MatIconModule,
-    MatDialogModule
+    MatDialogModule,
+    MatProgressSpinnerModule
   ],
   templateUrl: './service-detail.component.html',
   styleUrls: ['./service-detail.component.scss']
@@ -105,7 +107,6 @@ export class ServiceDetailComponent implements OnInit {
             duration: 2000,
           });
 
-          // Branch logic based on payment method
           if (paymentMethod === 'ONLINE') {
             return this.paymentService.createOrder(appointment.appointmentId);
           } else {
@@ -149,5 +150,9 @@ export class ServiceDetailComponent implements OnInit {
     }).onAction().subscribe(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  openImage(url: string): void {
+    window.open(url, '_blank');
   }
 }

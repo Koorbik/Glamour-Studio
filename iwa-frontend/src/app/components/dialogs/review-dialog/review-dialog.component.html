@@ -1,31 +1,50 @@
 <h2 mat-dialog-title>Rate Your Experience</h2>
+
 <mat-dialog-content>
   <div class="rating-container">
     <div class="stars">
-      @for (star of stars; track star) {
-        <mat-icon
-          (mouseenter)="hoverRating = star"
-          (mouseleave)="hoverRating = 0"
-          (click)="setRating(star)"
-          [class.filled]="star <= (hoverRating || rating)">
-          {{ star <= (hoverRating || rating) ? 'star' : 'star_border' }}
-        </mat-icon>
-      }
+      <mat-icon *ngFor="let star of [1,2,3,4,5]; let i = index"
+                (click)="setRating(i + 1)"
+                (mouseenter)="hoverRating = i + 1"
+                (mouseleave)="hoverRating = 0"
+                [class.filled]="(hoverRating || rating) >= (i + 1)">
+        star
+      </mat-icon>
     </div>
-    <p class="rating-text">
-      {{ rating > 0 ? 'You rated: ' + rating + '/5' : 'Select a rating' }}
+    <p class="rating-text" *ngIf="rating > 0">
+      {{ getRatingText(rating) }}
     </p>
   </div>
 
   <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Write a comment (optional)</mat-label>
-    <textarea matInput [(ngModel)]="comment" rows="4" placeholder="How was your service?"></textarea>
+    <mat-label>Share your thoughts (optional)</mat-label>
+    <textarea matInput [(ngModel)]="comment" rows="4" placeholder="Tell us what you liked..."></textarea>
   </mat-form-field>
+
+  <div class="image-upload-section">
+    <div class="upload-btn-wrapper" *ngIf="!selectedImagePreview">
+      <button mat-stroked-button type="button" (click)="fileInput.click()">
+        <mat-icon>add_photo_alternate</mat-icon>
+        Add Photo
+      </button>
+      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+    </div>
+
+    <div class="image-preview" *ngIf="selectedImagePreview">
+      <img [src]="selectedImagePreview" alt="Review attachment">
+      <button mat-icon-button class="remove-btn" (click)="removeImage()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+  </div>
+
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close [disabled]="isSubmitting">Cancel</button>
-  <button mat-raised-button color="primary" (click)="submitReview()" [disabled]="isSubmitting || rating === 0">
-    Submit Review
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary"
+          [disabled]="rating === 0 || isSubmitting"
+          (click)="submitReview()">
+    {{ isSubmitting ? 'Submitting...' : 'Submit Review' }}
   </button>
 </mat-dialog-actions>

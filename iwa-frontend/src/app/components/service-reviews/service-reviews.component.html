@@ -45,6 +45,15 @@
                 </div>
               </div>
               <p class="review-comment">{{ review.comment }}</p>
+
+              @if (review.attachmentUrl) {
+                <div class="review-attachment">
+                  <img [src]="review.attachmentUrl"
+                       alt="Review photo"
+                       (click)="openImage(review.attachmentUrl)"
+                       class="review-img">
+                </div>
+              }
             </div>
           } @empty {
             <div class="no-reviews-state">

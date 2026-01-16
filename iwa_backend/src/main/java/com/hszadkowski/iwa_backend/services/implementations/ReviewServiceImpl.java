@@ -9,10 +9,13 @@ import com.hszadkowski.iwa_backend.models.Review;
 import com.hszadkowski.iwa_backend.repos.AppointmentRepository;
 import com.hszadkowski.iwa_backend.repos.ReviewRepository;
 import com.hszadkowski.iwa_backend.repos.UserRepository;
+import com.hszadkowski.iwa_backend.services.FileStorageService;
 import com.hszadkowski.iwa_backend.services.interfaces.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -25,10 +28,11 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserRepository userRepository;
     private final AppointmentRepository appointmentRepository;
     private final ReviewRepository reviewRepository;
+    private final FileStorageService fileStorageService;
 
     @Override
     @Transactional
-    public ReviewResponseDto createReview(String userEmail, CreateReviewDto dto) {
+    public ReviewResponseDto createReview(String userEmail, CreateReviewDto dto, MultipartFile file) {
         AppUser user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -44,8 +48,23 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(dto.getComment());
         review.setCreatedAt(LocalDate.now());
 
-        Review savedReview = reviewRepository.save(review);
+        if (file != null && !file.isEmpty()) {
+            if (!file.getContentType().startsWith("image/")) {
+                throw new RuntimeException("Only image files are allowed.");
+            }
 
+            String fileName = fileStorageService.storeFile(file);
+
+            // generate URL (e.g., http://localhost:8080/uploads/abc-123.jpg)
+            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path("/uploads/")
+                    .path(fileName)
+                    .toUriString();
+
+            review.setAttachmentUrl(fileDownloadUri);
+        }
+
+        Review savedReview = reviewRepository.save(review);
         return mapToDto(savedReview);
     }
 
@@ -85,6 +104,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .createdAt(review.getCreatedAt())
+                .attachmentUrl(review.getAttachmentUrl())
                 .build();
     }
 
