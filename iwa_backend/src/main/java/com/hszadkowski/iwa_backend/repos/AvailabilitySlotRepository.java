@@ -19,7 +19,7 @@ public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySl
     List<AvailabilitySlot> findByIsBookedFalseAndStartTimeBetween(
             LocalDateTime startTime, LocalDateTime endTime);
 
-    List<AvailabilitySlot> findByServiceAndIsBookedFalseAndStartTimeBetween(
+    List<AvailabilitySlot> findByServiceAndIsBookedFalseAndStartTimeBetweenOrderByStartTimeAsc(
             Service service, LocalDateTime startTime, LocalDateTime endTime);
 
     @Query("SELECT a FROM AvailabilitySlot a WHERE a.appUser = :admin AND " +

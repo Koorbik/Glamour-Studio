@@ -67,7 +67,7 @@ public class AvailabilityServiceImpl implements AvailabilityService {
         if (dto.getServiceId() != null) {
             Service service = serviceRepository.findById(dto.getServiceId())
                     .orElseThrow(() -> new ServiceDoesNotExistException("Service not found"));
-            slots = availabilitySlotRepository.findByServiceAndIsBookedFalseAndStartTimeBetween(
+            slots = availabilitySlotRepository.findByServiceAndIsBookedFalseAndStartTimeBetweenOrderByStartTimeAsc(
                     service, dto.getStartTime(), dto.getEndTime());
         } else {
             slots = availabilitySlotRepository.findByIsBookedFalseAndStartTimeBetween(
