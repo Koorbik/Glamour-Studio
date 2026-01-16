@@ -30,17 +30,27 @@ export class ReviewDialogComponent {
   comment = '';
   isSubmitting = false;
 
+  isEditMode = false;
+
   selectedFiles: File[] = [];
   selectedImagePreviews: string[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<ReviewDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: { appointmentId: number },
+    @Inject(MAT_DIALOG_DATA) public data: { appointmentId: number, review?: any },
     private apiService: ApiService,
     private snackBar: MatSnackBar
-  ) {}
+  ) {
+    if (data.review) {
+      this.isEditMode = true;
+      this.rating = data.review.rating;
+      this.comment = data.review.comment;
+    }
+  }
 
-  setRating(star: number) { this.rating = star; }
+  setRating(star: number) {
+    this.rating = star;
+  }
 
   getRatingText(rating: number): string {
     const texts = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
@@ -77,32 +87,49 @@ export class ReviewDialogComponent {
 
   submitReview() {
     if (this.rating === 0) return;
+
     this.isSubmitting = true;
 
     const formData = new FormData();
 
-    // Append JSON data
     const reviewData = {
       appointmentId: this.data.appointmentId,
       rating: this.rating,
       comment: this.comment
     };
-    formData.append('review', new Blob([JSON.stringify(reviewData)], { type: 'application/json' }));
+
+    formData.append('review', new Blob([JSON.stringify(reviewData)], {
+      type: 'application/json'
+    }));
 
     this.selectedFiles.forEach(file => {
       formData.append('files', file);
     });
 
-    this.apiService.post('reviews', formData).subscribe({
-      next: () => {
-        this.snackBar.open('Review submitted successfully!', 'Close', { duration: 3000 });
-        this.dialogRef.close(true);
-      },
-      error: (err) => {
-        console.error(err);
-        this.snackBar.open('Failed to submit review', 'Close', { duration: 3000 });
-        this.isSubmitting = false;
-      }
-    });
+    if (this.isEditMode) {
+      this.apiService.put(`reviews/${this.data.review.reviewId}`, formData).subscribe({
+        next: () => {
+          this.snackBar.open('Review updated successfully!', 'Close', { duration: 3000 });
+          this.dialogRef.close(true);
+        },
+        error: (err) => {
+          console.error(err);
+          this.snackBar.open('Failed to update review', 'Close', { duration: 3000 });
+          this.isSubmitting = false;
+        }
+      });
+    } else {
+      this.apiService.post('reviews', formData).subscribe({
+        next: () => {
+          this.snackBar.open('Review submitted successfully!', 'Close', { duration: 3000 });
+          this.dialogRef.close(true);
+        },
+        error: (err) => {
+          console.error(err);
+          this.snackBar.open('Failed to submit review', 'Close', { duration: 3000 });
+          this.isSubmitting = false;
+        }
+      });
+    }
   }
 }

@@ -11,5 +11,6 @@ public interface ReviewService {
     List<ReviewResponseDto> getReviewsForService(Integer serviceId);
 
     List<ReviewResponseDto> getAllReviews();
-    void deleteReview(Integer reviewId);
+    void deleteReview(Integer reviewId, String userEmail);
+    ReviewResponseDto updateReview(Integer reviewId, String userEmail, CreateReviewDto dto, List<MultipartFile> files);
 }

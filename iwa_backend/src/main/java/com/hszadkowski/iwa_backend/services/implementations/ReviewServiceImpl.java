@@ -92,11 +92,22 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional
-    public void deleteReview(Integer reviewId) {
+    public void deleteReview(Integer reviewId, String userEmail) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new RuntimeException("Review not found"));
 
-        if (review.getAttachmentUrls() != null && !review.getAttachmentUrls().isEmpty()) {
+        AppUser user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if user is OWNER or ADMIN
+        boolean isOwner = review.getAppUser().getAppUserId().equals(user.getAppUserId());
+        boolean isAdmin = "ROLE_ADMIN".equalsIgnoreCase(user.getRole());
+
+        if (!isOwner && !isAdmin) {
+            throw new RuntimeException("You are not authorized to delete this review.");
+        }
+
+        if (review.getAttachmentUrls() != null) {
             for (String url : review.getAttachmentUrls()) {
                 fileStorageService.deleteFile(url);
             }
@@ -108,6 +119,40 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         reviewRepository.delete(review);
+    }
+
+    @Override
+    @Transactional
+    public ReviewResponseDto updateReview(Integer reviewId, String userEmail, CreateReviewDto dto, List<MultipartFile> files) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found"));
+
+        if (!review.getAppUser().getEmail().equals(userEmail)) {
+            throw new RuntimeException("You can only edit your own reviews.");
+        }
+
+        review.setRating(dto.getRating());
+        review.setComment(dto.getComment());
+
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+                        throw new RuntimeException("Only image files are allowed.");
+                    }
+                    String fileName = fileStorageService.storeFile(file);
+                    String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                            .path("/uploads/")
+                            .path(fileName)
+                            .toUriString();
+
+                    review.getAttachmentUrls().add(fileUrl);
+                }
+            }
+        }
+
+        Review updatedReview = reviewRepository.save(review);
+        return mapToDto(updatedReview);
     }
 
     private void validateReviewCreation(AppUser user, Appointment appointment) {

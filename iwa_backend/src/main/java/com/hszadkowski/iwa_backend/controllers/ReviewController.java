@@ -44,9 +44,25 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{reviewId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteReview(@PathVariable Integer reviewId) {
-        reviewService.deleteReview(reviewId);
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> deleteReview(
+            @PathVariable Integer reviewId,
+            Authentication authentication) {
+
+        String userEmail = authentication.getName();
+        reviewService.deleteReview(reviewId, userEmail);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping(value = "/{reviewId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ReviewResponseDto> updateReview(
+            @PathVariable Integer reviewId,
+            @RequestPart("review") @Valid CreateReviewDto reviewDto,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
+            Authentication authentication) throws IOException {
+
+        String userEmail = authentication.getName();
+        return ResponseEntity.ok(reviewService.updateReview(reviewId, userEmail, reviewDto, files));
     }
 }

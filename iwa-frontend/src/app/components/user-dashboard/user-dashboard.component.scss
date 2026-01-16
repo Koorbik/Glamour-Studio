@@ -772,4 +772,77 @@ mat-divider {
       color: white !important;
     }
   }
+
+  .user-rating-display {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+    margin-top: 0.5rem;
+
+    .rating-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+
+    .rating-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    .rating-actions {
+      display: flex;
+      gap: 0; // icon buttons have internal padding
+
+      button {
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+
+    .stars {
+      display: flex;
+      gap: 4px;
+      justify-content: center; // Center stars if you prefer
+      margin: 0.5rem 0;
+
+      mat-icon {
+        font-size: 24px !important;
+        width: 24px !important;
+        height: 24px !important;
+        color: #e2e8f0;
+
+        &.filled {
+          color: #fbbf24;
+        }
+      }
+    }
+
+    .review-comment-preview {
+      font-size: 0.9rem;
+      color: #64748b;
+      font-style: italic;
+      margin: 0;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
 }
