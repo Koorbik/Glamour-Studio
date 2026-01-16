@@ -9,4 +9,7 @@ import java.util.List;
 public interface ReviewService {
     ReviewResponseDto createReview(String userEmail, CreateReviewDto dto, List<MultipartFile> files);
     List<ReviewResponseDto> getReviewsForService(Integer serviceId);
+
+    List<ReviewResponseDto> getAllReviews();
+    void deleteReview(Integer reviewId);
 }

@@ -20,7 +20,8 @@ import {FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators} fr
 import {ApiService} from '../../services/api.service';
 import {ConfirmDialogComponent} from '../dialogs/confirm-dialog/confirm-dialog.component';
 import {AvailabilitySlotResponseDto} from '../../interfaces/availability.dto';
-import { PaymentService } from '../../services/payment.service';
+import {PaymentService} from '../../services/payment.service';
+import {ReviewResponseDto} from '../../interfaces/review.dto';
 
 interface Appointment {
   appointmentId: number;
@@ -101,6 +102,8 @@ export class AdminDashboardComponent implements OnInit {
   appointments: Appointment[] = [];
   availabilitySlots: AvailabilitySlotResponseDto[] = [];
   services: Service[] = [];
+  reviews: ReviewResponseDto[] = [];
+  displayedReviewColumns: string[] = ['id', 'author', 'rating', 'comment', 'date', 'actions'];
 
   appointmentDisplayedColumns: string[] = [
     'appointmentId',
@@ -186,6 +189,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loadAppointments();
     this.loadAvailabilitySlots();
     this.loadServices();
+    this.loadReviews();
   }
 
   loadAppointments(): void {
@@ -252,6 +256,42 @@ export class AdminDashboardComponent implements OnInit {
         this.snackBar.open('Failed to load services', 'Close', {duration: 3000});
       }
     });
+  }
+
+  loadReviews() {
+    this.apiService.get<ReviewResponseDto[]>('reviews').subscribe({
+      next: (data) => this.reviews = data,
+      error: (err) => console.error('Failed to load reviews', err)
+    });
+  }
+
+  deleteReview(review: ReviewResponseDto) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Review',
+        message: `Are you sure you want to delete the review by ${review.authorName}?`
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.apiService.delete(`reviews/${review.reviewId}`).subscribe({
+          next: () => {
+            this.snackBar.open('Review deleted successfully', 'Close', {duration: 3000});
+            this.loadReviews(); // Refresh list
+          },
+          error: (err) => {
+            console.error(err);
+            this.snackBar.open('Failed to delete review', 'Close', {duration: 3000});
+          }
+        });
+      }
+    });
+  }
+
+  getStars(rating: number): number[] {
+    return Array(5).fill(0).map((_, i) => i < rating ? 1 : 0);
   }
 
   markAsPaid(paymentId: number | undefined): void {

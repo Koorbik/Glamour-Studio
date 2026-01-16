@@ -50,11 +50,10 @@ public class ReviewServiceImpl implements ReviewService {
         review.setCreatedAt(LocalDate.now());
 
         List<String> uploadedUrls = new ArrayList<>();
-
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
-                    if (!file.getContentType().startsWith("image/")) {
+                    if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
                         throw new RuntimeException("Only image files are allowed.");
                     }
 
@@ -79,27 +78,51 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public List<ReviewResponseDto> getReviewsForService(Integer serviceId) {
         List<Review> reviews = reviewRepository.findAllByServiceId(serviceId);
+        return reviews.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
 
-        return reviews.stream()
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReviewResponseDto> getAllReviews() {
+        return reviewRepository.findAll()
+                .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void deleteReview(Integer reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new RuntimeException("Review not found"));
+
+        if (review.getAttachmentUrls() != null && !review.getAttachmentUrls().isEmpty()) {
+            for (String url : review.getAttachmentUrls()) {
+                fileStorageService.deleteFile(url);
+            }
+        }
+
+        Appointment appointment = review.getAppointment();
+        if (appointment != null) {
+            appointment.setReview(null);
+        }
+
+        reviewRepository.delete(review);
     }
 
     private void validateReviewCreation(AppUser user, Appointment appointment) {
         if (!appointment.getAppUser().getAppUserId().equals(user.getAppUserId())) {
             throw new RuntimeException("You can only review your own appointments.");
         }
-
         if (appointment.getStatus() == null || !appointment.getStatus().getName().equalsIgnoreCase("COMPLETED")) {
             throw new RuntimeException("You can only review completed appointments.");
         }
-
         if (appointment.getReview() != null) {
             throw new RuntimeException("You have already reviewed this appointment.");
         }
     }
+
     private ReviewResponseDto mapToDto(Review review) {
-        // Mask the last name for privacy (e.g., "Anna S.")
         String authorName = review.getAppUser().getName();
         if (review.getAppUser().getSurname() != null && !review.getAppUser().getSurname().isEmpty()) {
             authorName += " " + review.getAppUser().getSurname().charAt(0) + ".";
@@ -114,6 +137,4 @@ public class ReviewServiceImpl implements ReviewService {
                 .attachmentUrls(review.getAttachmentUrls())
                 .build();
     }
-
-    // in the future add a method (with endpoint to actually calculate the average on backend side)
 }
