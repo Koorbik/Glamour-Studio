@@ -7,7 +7,7 @@ import {MatButtonModule} from '@angular/material/button';
 import {MatSnackBar, MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatIconModule} from '@angular/material/icon';
 import {MatDialog, MatDialogModule} from '@angular/material/dialog';
-import {MatProgressSpinnerModule} from '@angular/material/progress-spinner'; // <--- Added this import
+import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {Observable} from 'rxjs';
 import {switchMap} from 'rxjs/operators';
 

@@ -170,6 +170,38 @@
   }
 }
 
+// --- NEW GALLERY STYLES ---
+.review-gallery {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto; /* Allow horizontal scrolling if many images */
+  padding-bottom: 0.5rem;
+
+  /* Hide scrollbar for cleaner look */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gallery-img {
+    height: 80px;
+    width: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+    flex-shrink: 0; /* Prevent images from squishing */
+
+    &:hover {
+      transform: scale(1.05);
+      border-color: #cbd5e1;
+    }
+  }
+}
+
 @media (max-width: 768px) {
   .rating-summary-card {
     flex-direction: column;

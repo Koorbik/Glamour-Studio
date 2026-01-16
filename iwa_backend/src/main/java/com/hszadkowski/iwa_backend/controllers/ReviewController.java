@@ -24,11 +24,11 @@ public class ReviewController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ReviewResponseDto> createReview(
             @RequestPart("review") @Valid CreateReviewDto reviewDto,
-            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files,
             Authentication authentication) throws IOException {
 
         String userEmail = authentication.getName();
-        return ResponseEntity.ok(reviewService.createReview(userEmail, reviewDto, file));
+        return ResponseEntity.ok(reviewService.createReview(userEmail, reviewDto, files));
     }
 
     @GetMapping("/service/{serviceId}")

@@ -4,7 +4,7 @@ export interface ReviewResponseDto {
   rating: number;
   comment: string;
   createdAt: string;
-  attachmentUrl?: string;
+  attachmentUrls?: string[];
 }
 
 export interface CreateReviewDto {

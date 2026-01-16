@@ -30,8 +30,8 @@ export class ReviewDialogComponent {
   comment = '';
   isSubmitting = false;
 
-  selectedFile: File | null = null;
-  selectedImagePreview: string | null = null;
+  selectedFiles: File[] = [];
+  selectedImagePreviews: string[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<ReviewDialogComponent>,
@@ -48,52 +48,51 @@ export class ReviewDialogComponent {
   }
 
   onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      if (!file.type.startsWith('image/')) {
-        this.snackBar.open('Please select an image file', 'Close', { duration: 3000 });
-        return;
-      }
-      this.selectedFile = file;
+    const files: FileList = event.target.files;
 
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.selectedImagePreview = e.target.result;
-      };
-      reader.readAsDataURL(file);
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+
+        if (!file.type.startsWith('image/')) {
+          this.snackBar.open(`File "${file.name}" is not an image`, 'Close', { duration: 3000 });
+          continue;
+        }
+
+        this.selectedFiles.push(file);
+
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          this.selectedImagePreviews.push(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      }
     }
   }
 
-  removeImage() {
-    this.selectedFile = null;
-    this.selectedImagePreview = null;
+  removeImage(index: number) {
+    this.selectedFiles.splice(index, 1);
+    this.selectedImagePreviews.splice(index, 1);
   }
 
   submitReview() {
     if (this.rating === 0) return;
-
     this.isSubmitting = true;
 
-    // Use FormData to send file + JSON
     const formData = new FormData();
 
-    // Create the JSON part
+    // Append JSON data
     const reviewData = {
       appointmentId: this.data.appointmentId,
       rating: this.rating,
       comment: this.comment
     };
+    formData.append('review', new Blob([JSON.stringify(reviewData)], { type: 'application/json' }));
 
-    // Append JSON as a Blob to specify content type
-    formData.append('review', new Blob([JSON.stringify(reviewData)], {
-      type: 'application/json'
-    }));
+    this.selectedFiles.forEach(file => {
+      formData.append('files', file);
+    });
 
-    if (this.selectedFile) {
-      formData.append('file', this.selectedFile);
-    }
-
-    // Call API (Ensure your API service can handle FormData)
     this.apiService.post('reviews', formData).subscribe({
       next: () => {
         this.snackBar.open('Review submitted successfully!', 'Close', { duration: 3000 });

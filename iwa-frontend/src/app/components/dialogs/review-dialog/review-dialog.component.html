@@ -22,19 +22,22 @@
   </mat-form-field>
 
   <div class="image-upload-section">
-    <div class="upload-btn-wrapper" *ngIf="!selectedImagePreview">
+    <div class="upload-controls">
       <button mat-stroked-button type="button" (click)="fileInput.click()">
         <mat-icon>add_photo_alternate</mat-icon>
-        Add Photo
+        Add Photos
       </button>
-      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" multiple style="display: none;">
+      <span class="file-hint" *ngIf="selectedFiles.length > 0">{{ selectedFiles.length }} files selected</span>
     </div>
 
-    <div class="image-preview" *ngIf="selectedImagePreview">
-      <img [src]="selectedImagePreview" alt="Review attachment">
-      <button mat-icon-button class="remove-btn" (click)="removeImage()">
-        <mat-icon>close</mat-icon>
-      </button>
+    <div class="previews-grid" *ngIf="selectedImagePreviews.length > 0">
+      <div class="preview-item" *ngFor="let preview of selectedImagePreviews; let i = index">
+        <img [src]="preview" alt="Preview">
+        <button mat-icon-button class="remove-btn" (click)="removeImage(i)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
     </div>
   </div>
 

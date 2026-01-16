@@ -46,12 +46,14 @@
               </div>
               <p class="review-comment">{{ review.comment }}</p>
 
-              @if (review.attachmentUrl) {
-                <div class="review-attachment">
-                  <img [src]="review.attachmentUrl"
-                       alt="Review photo"
-                       (click)="openImage(review.attachmentUrl)"
-                       class="review-img">
+              @if (review.attachmentUrls && review.attachmentUrls.length > 0) {
+                <div class="review-gallery">
+                  @for (url of review.attachmentUrls; track url) {
+                    <img [src]="url"
+                         alt="Review photo"
+                         (click)="openImage(url)"
+                         class="gallery-img">
+                  }
                 </div>
               }
             </div>

@@ -104,11 +104,15 @@
             <div class="empty-state">
               <mat-icon>event_busy</mat-icon>
               <h3>No Available Slots</h3>
-              <p>We're currently fully booked. Please check back soon.</p>
+              <p>We're currently fully booked for the next few weeks. Please check back soon or contact us directly for special arrangements.</p>
               <div class="empty-actions">
                 <button mat-raised-button color="primary" routerLink="/services">
                   <mat-icon>arrow_back</mat-icon>
                   Browse Other Services
+                </button>
+                <button mat-stroked-button>
+                  <mat-icon>email</mat-icon>
+                  Contact Us
                 </button>
               </div>
             </div>
@@ -122,13 +126,17 @@
                 <mat-icon>account_circle</mat-icon>
               </div>
               <div class="prompt-text">
-                <h3>Ready to Book?</h3>
-                <p>Sign in to secure your appointment.</p>
+                <h3>Ready to Book Your Appointment?</h3>
+                <p>Create an account or sign in to secure your preferred time slot and enjoy exclusive member benefits.</p>
               </div>
               <div class="prompt-actions">
                 <button mat-raised-button color="primary" routerLink="/login">
                   <mat-icon>login</mat-icon>
                   Sign In
+                </button>
+                <button mat-stroked-button routerLink="/signup">
+                  <mat-icon>person_add</mat-icon>
+                  Create Account
                 </button>
               </div>
             </div>
@@ -170,19 +178,21 @@
               </div>
               <p class="review-comment">{{ review.comment }}</p>
 
-              @if (review.attachmentUrl) {
-                <div class="review-attachment">
-                  <img [src]="review.attachmentUrl"
-                       alt="Review photo"
-                       (click)="openImage(review.attachmentUrl)"
-                       class="review-img">
+              @if (review.attachmentUrls && review.attachmentUrls.length > 0) {
+                <div class="review-gallery">
+                  @for (url of review.attachmentUrls; track url) {
+                    <img [src]="url"
+                         alt="Review photo"
+                         (click)="openImage(url)"
+                         class="gallery-img">
+                  }
                 </div>
               }
             </div>
           } @empty {
             <div class="no-reviews-state">
               <mat-icon>rate_review</mat-icon>
-              <p>No reviews yet.</p>
+              <p>No reviews yet. Be the first to share your experience!</p>
             </div>
           }
         </div>
@@ -207,22 +217,22 @@
           <div class="benefit">
             <mat-icon>workspace_premium</mat-icon>
             <h4>Professional Quality</h4>
-            <p>Using only the finest makeup products.</p>
+            <p>Using only the finest makeup products and professional techniques</p>
           </div>
           <div class="benefit">
             <mat-icon>schedule</mat-icon>
             <h4>Flexible Scheduling</h4>
-            <p>Book at your convenience.</p>
+            <p>Book at your convenience with our easy online scheduling system</p>
           </div>
           <div class="benefit">
             <mat-icon>favorite</mat-icon>
             <h4>Personalized Service</h4>
-            <p>Tailored to your unique style.</p>
+            <p>Every session is tailored to your unique style and preferences</p>
           </div>
           <div class="benefit">
             <mat-icon>camera_alt</mat-icon>
             <h4>Photo Ready Results</h4>
-            <p>Stunning in person and in photos.</p>
+            <p>Long-lasting makeup that looks stunning in person and in photos</p>
           </div>
         </div>
       </div>
@@ -230,8 +240,11 @@
 
   } @else {
     <div class="loading-state">
-      <mat-spinner></mat-spinner>
-      <p>Loading Service Details...</p>
+      <div class="loading-content">
+        <mat-icon class="loading-icon">spa</mat-icon>
+        <h3>Loading Service Details...</h3>
+        <p>Please wait while we prepare your beauty experience</p>
+      </div>
     </div>
   }
 </div>

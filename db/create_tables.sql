@@ -102,6 +102,13 @@ CREATE TABLE "public"."reviews"
     CONSTRAINT fk_reviews_user FOREIGN KEY ("app_user_id") REFERENCES "public"."app_users" ("app_user_id")
 );
 
+CREATE TABLE "public"."review_attachments"
+(
+    "review_id"      integer NOT NULL,
+    "attachment_url" varchar NOT NULL,
+    CONSTRAINT fk_attachments_review FOREIGN KEY ("review_id") REFERENCES "public"."reviews" ("review_id")
+);
+
 CREATE TABLE "public"."calendar_tokens"
 (
     "token_id"      SERIAL PRIMARY KEY,

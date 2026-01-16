@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,7 +33,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional
-    public ReviewResponseDto createReview(String userEmail, CreateReviewDto dto, MultipartFile file) {
+    public ReviewResponseDto createReview(String userEmail, CreateReviewDto dto, List<MultipartFile> files) {
         AppUser user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -48,21 +49,27 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(dto.getComment());
         review.setCreatedAt(LocalDate.now());
 
-        if (file != null && !file.isEmpty()) {
-            if (!file.getContentType().startsWith("image/")) {
-                throw new RuntimeException("Only image files are allowed.");
+        List<String> uploadedUrls = new ArrayList<>();
+
+        if (files != null && !files.isEmpty()) {
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    if (!file.getContentType().startsWith("image/")) {
+                        throw new RuntimeException("Only image files are allowed.");
+                    }
+
+                    String fileName = fileStorageService.storeFile(file);
+
+                    String fileUrl = ServletUriComponentsBuilder.fromCurrentContextPath()
+                            .path("/uploads/")
+                            .path(fileName)
+                            .toUriString();
+
+                    uploadedUrls.add(fileUrl);
+                }
             }
-
-            String fileName = fileStorageService.storeFile(file);
-
-            // generate URL (e.g., http://localhost:8080/uploads/abc-123.jpg)
-            String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/uploads/")
-                    .path(fileName)
-                    .toUriString();
-
-            review.setAttachmentUrl(fileDownloadUri);
         }
+        review.setAttachmentUrls(uploadedUrls);
 
         Review savedReview = reviewRepository.save(review);
         return mapToDto(savedReview);
@@ -104,7 +111,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .createdAt(review.getCreatedAt())
-                .attachmentUrl(review.getAttachmentUrl())
+                .attachmentUrls(review.getAttachmentUrls())
                 .build();
     }
 

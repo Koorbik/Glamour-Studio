@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -17,5 +18,5 @@ public class ReviewResponseDto {
     private Integer rating;
     private String comment;
     private LocalDate createdAt;
-    private String attachmentUrl;
+    private List<String> attachmentUrls;
 }
