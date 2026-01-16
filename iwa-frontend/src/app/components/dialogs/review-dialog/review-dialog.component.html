@@ -1,0 +1,53 @@
+<h2 mat-dialog-title>Rate Your Experience</h2>
+
+<mat-dialog-content>
+  <div class="rating-container">
+    <div class="stars">
+      <mat-icon *ngFor="let star of [1,2,3,4,5]; let i = index"
+                (click)="setRating(i + 1)"
+                (mouseenter)="hoverRating = i + 1"
+                (mouseleave)="hoverRating = 0"
+                [class.filled]="(hoverRating || rating) >= (i + 1)">
+        star
+      </mat-icon>
+    </div>
+    <p class="rating-text" *ngIf="rating > 0">
+      {{ getRatingText(rating) }}
+    </p>
+  </div>
+
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Share your thoughts (optional)</mat-label>
+    <textarea matInput [(ngModel)]="comment" rows="4" placeholder="Tell us what you liked..."></textarea>
+  </mat-form-field>
+
+  <div class="image-upload-section">
+    <div class="upload-controls">
+      <button mat-stroked-button type="button" (click)="fileInput.click()">
+        <mat-icon>add_photo_alternate</mat-icon>
+        Add Photos
+      </button>
+      <input #fileInput type="file" (change)="onFileSelected($event)" accept="image/*" multiple style="display: none;">
+      <span class="file-hint" *ngIf="selectedFiles.length > 0">{{ selectedFiles.length }} files selected</span>
+    </div>
+
+    <div class="previews-grid" *ngIf="selectedImagePreviews.length > 0">
+      <div class="preview-item" *ngFor="let preview of selectedImagePreviews; let i = index">
+        <img [src]="preview" alt="Preview">
+        <button mat-icon-button class="remove-btn" (click)="removeImage(i)">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button mat-raised-button color="primary"
+          [disabled]="rating === 0 || isSubmitting"
+          (click)="submitReview()">
+    {{ isSubmitting ? 'Submitting...' : 'Submit Review' }}
+  </button>
+</mat-dialog-actions>

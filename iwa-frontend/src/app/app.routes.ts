@@ -11,6 +11,7 @@ import { UserDashboardComponent } from './components/user-dashboard/user-dashboa
 import { UserSettingsComponent } from './components/user-settings/user-settings.component';
 import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
 import { OAuthCallbackComponent } from './components/oauth-callback/oauth-callback.component';
+import { ServiceReviewsComponent } from './components/service-reviews/service-reviews.component';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -19,6 +20,7 @@ export const routes: Routes = [
   { path: 'verify-email', component: VerifyEmailComponent },
   { path: 'services', component: ServicesListComponent },
   { path: 'services/:id', component: ServiceDetailComponent },
+  { path: 'services/:id/reviews', component: ServiceReviewsComponent },
   {
     path: 'dashboard',
     component: UserDashboardComponent,

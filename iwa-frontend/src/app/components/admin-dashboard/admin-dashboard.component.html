@@ -465,5 +465,67 @@
         </mat-card>
       </div>
     </mat-tab>
+
+    <mat-tab label="Reviews Management">
+      <div class="tab-content">
+        <div class="table-container">
+          <table mat-table [dataSource]="reviews" class="mat-elevation-z8">
+
+            <ng-container matColumnDef="id">
+              <th mat-header-cell *matHeaderCellDef> ID </th>
+              <td mat-cell *matCellDef="let review"> #{{ review.reviewId }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="author">
+              <th mat-header-cell *matHeaderCellDef> Author </th>
+              <td mat-cell *matCellDef="let review"> {{ review.authorName }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="rating">
+              <th mat-header-cell *matHeaderCellDef> Rating </th>
+              <td mat-cell *matCellDef="let review">
+                <div class="star-rating">
+                  <mat-icon *ngFor="let s of getStars(review.rating)"
+                            [class.filled]="s === 1">star</mat-icon>
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="comment">
+              <th mat-header-cell *matHeaderCellDef> Comment </th>
+              <td mat-cell *matCellDef="let review" class="comment-cell">
+                {{ review.comment }}
+                <div *ngIf="review.attachmentUrls?.length" class="attachment-badge">
+                  <mat-icon>attach_file</mat-icon> {{ review.attachmentUrls.length }} photos
+                </div>
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef> Date </th>
+              <td mat-cell *matCellDef="let review"> {{ review.createdAt | date:'shortDate' }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef> Actions </th>
+              <td mat-cell *matCellDef="let review">
+                <button mat-icon-button color="warn" (click)="deleteReview(review)" matTooltip="Delete Review">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedReviewColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedReviewColumns;"></tr>
+
+            <tr class="mat-row" *matNoDataRow>
+              <td class="mat-cell" colspan="6" style="text-align: center; padding: 2rem;">
+                No reviews found.
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </mat-tab>
   </mat-tab-group>
 </div>

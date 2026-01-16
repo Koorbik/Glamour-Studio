@@ -18,6 +18,8 @@ import { PaymentService } from '../../services/payment.service';
 import { AppointmentResponseDto } from '../../interfaces/appointment.dto';
 import { RescheduleDialogComponent } from './reschedule-dialog/reschedule-dialog.component';
 import { CancelConfirmDialogComponent } from './cancel-confirm-dialog/cancel-confirm-dialog.component';
+import { ReviewDialogComponent } from '../dialogs/review-dialog/review-dialog.component';
+import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
 
 interface AppointmentWithSyncStatus extends AppointmentResponseDto {
   isSyncing?: boolean;
@@ -238,6 +240,47 @@ export class UserDashboardComponent implements OnInit {
     });
   }
 
+  openReviewDialog(appointmentId: number, existingReview: any = null) {
+    const dialogRef = this.dialog.open(ReviewDialogComponent, {
+      width: '500px',
+      data: {
+        appointmentId: appointmentId,
+        review: existingReview
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.loadAppointments();
+      }
+    });
+  }
+
+  deleteReview(reviewId: number) {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Review',
+        message: 'Are you sure you want to delete this review?'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.apiService.delete(`reviews/${reviewId}`).subscribe({
+          next: () => {
+            this.snackBar.open('Review deleted', 'Close', { duration: 3000 });
+            this.loadAppointments();
+          },
+          error: (err) => {
+            console.error(err);
+            this.snackBar.open('Failed to delete review', 'Close', { duration: 3000 });
+          }
+        });
+      }
+    });
+  }
+
   cancelAppointment(appointment: AppointmentResponseDto): void {
     this.apiService.put(`appointments/${appointment.appointmentId}/cancel`, {}).subscribe({
       next: () => {
@@ -303,3 +346,4 @@ export class UserDashboardComponent implements OnInit {
   }
 
 }
+

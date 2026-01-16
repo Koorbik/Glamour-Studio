@@ -290,5 +290,45 @@
         padding: 0 24px 16px;
       }
     }
+
+    .star-rating {
+      display: flex;
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        color: #e0e0e0;
+
+        &.filled {
+          color: #fbbf24; // Amber
+        }
+      }
+    }
+
+    .comment-cell {
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      .attachment-badge {
+        display: inline-flex;
+        align-items: center;
+        font-size: 0.75rem;
+        color: #64748b;
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 4px;
+        margin-left: 8px;
+
+        mat-icon {
+          font-size: 12px;
+          width: 12px;
+          height: 12px;
+          margin-right: 2px;
+        }
+      }
+    }
   }
 }

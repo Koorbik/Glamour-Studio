@@ -182,7 +182,6 @@ $card-hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   padding: 0.125rem 0.625rem;
   font-size: 0.75rem;
   font-weight: 600;
-  margin-left: 0.25rem;
 }
 
 .tab-content {
@@ -482,87 +481,140 @@ mat-divider {
   justify-content: center;
   flex-wrap: wrap;
   align-items: center;
-}
 
-.action-button {
-  flex: 1;
-  min-width: 120px;
-  max-width: 150px;
-  border-radius: 8px !important;
-  font-weight: 500 !important;
-  padding: 0.5rem 1rem !important;
-  transition: all 0.2s ease !important;
+  // New Rating Display Style
+  .user-rating-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+    margin-top: 0.5rem;
 
-  mat-icon {
-    font-size: 1.125rem !important;
-    width: 1.125rem !important;
-    height: 1.125rem !important;
-    margin-right: 0.375rem;
-  }
-
-  span {
-    font-size: 0.875rem;
-  }
-
-  &.reschedule-btn {
-    color: #52b788 !important;
-    border-color: #52b788 !important;
-
-    &:hover {
-      background: rgba(82, 183, 136, 0.1) !important;
+    .rating-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
     }
 
-    // Style for disabled state (when < 24h)
-    &[disabled] {
-      color: #a0a0a0 !important;
-      border-color: #e0e0e0 !important;
-      background: transparent !important;
-    }
-  }
+    .stars {
+      display: flex;
+      gap: 4px;
 
-  &.cancel-btn {
-    color: #e74c3c !important;
-    border-color: #e74c3c !important;
+      mat-icon {
+        font-size: 24px !important;
+        width: 24px !important;
+        height: 24px !important;
+        color: #e2e8f0;
 
-    &:hover {
-      background: rgba(231, 76, 60, 0.1) !important;
-    }
-  }
-
-  &.details-btn {
-    color: #3498db !important;
-    border-color: #3498db !important;
-
-    &:hover {
-      background: rgba(52, 152, 219, 0.1) !important;
-    }
-  }
-
-  &.calendar-sync-btn {
-    color: #4285f4 !important;
-    border-color: #4285f4 !important;
-
-    &:hover {
-      background: rgba(66, 133, 244, 0.1) !important;
-    }
-
-    mat-spinner {
-      margin-right: 0.375rem;
-
-      ::ng-deep {
-        svg {
-          stroke: #4285f4 !important;
+        &.filled {
+          color: #fbbf24;
         }
       }
     }
   }
 
-  &.book-again-btn {
-    color: #27ae60 !important;
-    border-color: #27ae60 !important;
+  .action-button {
+    flex: 1;
+    min-width: 120px;
+    max-width: 150px;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s ease !important;
 
-    &:hover {
-      background: rgba(39, 174, 96, 0.1) !important;
+    mat-icon {
+      font-size: 1.125rem !important;
+      width: 1.125rem !important;
+      height: 1.125rem !important;
+      margin-right: 0.375rem;
+    }
+
+    span {
+      font-size: 0.875rem;
+    }
+
+    &.reschedule-btn {
+      color: #52b788 !important;
+      border-color: #52b788 !important;
+
+      &:hover {
+        background: rgba(82, 183, 136, 0.1) !important;
+      }
+
+      // Style for disabled state (when < 24h)
+      &[disabled] {
+        color: #a0a0a0 !important;
+        border-color: #e0e0e0 !important;
+        background: transparent !important;
+      }
+    }
+
+    &.cancel-btn {
+      color: #e74c3c !important;
+      border-color: #e74c3c !important;
+
+      &:hover {
+        background: rgba(231, 76, 60, 0.1) !important;
+      }
+    }
+
+    &.details-btn {
+      color: #3498db !important;
+      border-color: #3498db !important;
+
+      &:hover {
+        background: rgba(52, 152, 219, 0.1) !important;
+      }
+    }
+
+    &.calendar-sync-btn {
+      color: #4285f4 !important;
+      border-color: #4285f4 !important;
+
+      &:hover {
+        background: rgba(66, 133, 244, 0.1) !important;
+      }
+
+      mat-spinner {
+        margin-right: 0.375rem;
+
+        ::ng-deep {
+          svg {
+            stroke: #4285f4 !important;
+          }
+        }
+      }
+    }
+
+    &.book-again-btn {
+      color: #27ae60 !important;
+      border-color: #27ae60 !important;
+
+      &:hover {
+        background: rgba(39, 174, 96, 0.1) !important;
+      }
+    }
+
+    // New Rate Button Style
+    &.rate-btn {
+      color: #d97706 !important; // Amber-600
+      border-color: #d97706 !important;
+
+      &:hover {
+        background: rgba(217, 119, 6, 0.1) !important;
+      }
+
+      mat-icon {
+        color: #fbbf24; // Amber-400 for the star icon
+      }
     }
   }
 }
@@ -718,6 +770,79 @@ mat-divider {
 
     .mat-mdc-button {
       color: white !important;
+    }
+  }
+
+  .user-rating-display {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    border: 1px dashed #e2e8f0;
+    margin-top: 0.5rem;
+
+    .rating-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin-bottom: 0.25rem;
+    }
+
+    .rating-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #94a3b8;
+      letter-spacing: 0.5px;
+    }
+
+    .rating-actions {
+      display: flex;
+      gap: 0; // icon buttons have internal padding
+
+      button {
+        width: 32px;
+        height: 32px;
+        line-height: 32px;
+
+        mat-icon {
+          font-size: 18px;
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+
+    .stars {
+      display: flex;
+      gap: 4px;
+      justify-content: center; // Center stars if you prefer
+      margin: 0.5rem 0;
+
+      mat-icon {
+        font-size: 24px !important;
+        width: 24px !important;
+        height: 24px !important;
+        color: #e2e8f0;
+
+        &.filled {
+          color: #fbbf24;
+        }
+      }
+    }
+
+    .review-comment-preview {
+      font-size: 0.9rem;
+      color: #64748b;
+      font-style: italic;
+      margin: 0;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }

@@ -567,24 +567,194 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-20px) rotate(2deg);
+// --- NEW REVIEW SECTION STYLES ---
+
+.reviews-section {
+  padding: 8rem 0; // Increased vertical padding for the whole section
+  background: white;
+}
+
+.reviews-header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 5rem; // Increased space between header/summary and list
+
+  h2 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 2.5rem; // More space below title
+    text-align: center;
+    letter-spacing: -0.02em;
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
+.rating-summary-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rem; // Doubled gap between score and stars for cleaner look
+  padding: 2.5rem 5rem; // Much larger padding for a "spacious" pill look
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 100px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    background: white;
+    box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.08);
+    border-color: #cbd5e1;
   }
-  50% {
-    opacity: 0.5;
+
+  .rating-number {
+    font-size: 4rem; // Larger number
+    font-weight: 800;
+    line-height: 1;
+    color: #1e293b;
+    letter-spacing: -2px;
+  }
+
+  .rating-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem; // Space between stars and count
+
+    .stars {
+      display: flex;
+      gap: 6px; // More space between stars
+      margin-bottom: 0.25rem;
+
+      mat-icon {
+        color: #e2e8f0;
+        width: 28px; // Larger stars
+        height: 28px;
+        font-size: 28px;
+
+        &.filled {
+          color: #fbbf24;
+        }
+      }
+    }
+
+    .review-count {
+      font-size: 1rem;
+      font-weight: 500;
+      color: #64748b;
+    }
   }
 }
 
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); // Wider cards
+  gap: 2.5rem; // Larger gap between cards
+}
+
+.review-item {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem; // Increased internal padding
+  border: 2px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: translateY(-5px);
+    border-color: #cbd5e1;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.08);
+  }
+
+  .review-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem; // More space between header and comment
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1.5rem; // More internal spacing
+
+    .reviewer-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+
+      .name {
+        font-weight: 700;
+        font-size: 1.15rem; // Slightly larger name
+        color: #1e293b;
+      }
+
+      .date {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        font-weight: 500;
+      }
+    }
+
+    .review-stars {
+      display: flex;
+      gap: 2px;
+      background: #f8fafc; // Subtle background for stars
+      padding: 0.5rem;
+      border-radius: 12px;
+
+      mat-icon {
+        font-size: 20px;
+        width: 20px;
+        height: 20px;
+        color: #e2e8f0;
+
+        &.filled {
+          color: #fbbf24;
+        }
+      }
+    }
+  }
+
+  .review-comment {
+    color: #475569;
+    line-height: 1.8; // Increased line-height for readability
+    font-size: 1.05rem;
+    margin: 0;
+  }
+}
+
+// --- NEW GALLERY STYLES ---
+.review-gallery {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  overflow-x: auto; /* Allow horizontal scrolling if many images */
+  padding-bottom: 0.5rem;
+
+  /* Hide scrollbar for cleaner look */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  .gallery-img {
+    height: 80px;
+    width: 80px;
+    object-fit: cover;
+    border-radius: 12px;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    transition: transform 0.2s;
+    flex-shrink: 0; /* Prevent images from squishing */
+
+    &:hover {
+      transform: scale(1.05);
+      border-color: #cbd5e1;
+    }
+  }
+}
+
+// ... Mobile styles remain similar, just ensuring they handle the new sizes ...
 @media (max-width: 1024px) {
   .service-header {
     grid-template-columns: 1fr;
@@ -636,6 +806,28 @@
   .benefits-grid {
     grid-template-columns: 1fr;
   }
+
+  // Mobile Review adjustments
+  .rating-summary-card {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    width: 100%;
+    max-width: 320px;
+    border-radius: 32px; // Rounded rect on mobile instead of pill
+
+    .rating-number {
+      font-size: 3.5rem;
+    }
+  }
+
+  .reviews-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-item {
+    padding: 2rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -672,5 +864,23 @@
 
   .benefits-section {
     padding: 4rem 0;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(2deg);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }

@@ -330,6 +330,45 @@
                         <span>View Details</span>
                       </button>
                     }
+
+                    @if (appointment.status === 'COMPLETED' && !appointment.review) {
+                      <button mat-stroked-button color="accent" class="action-button rate-btn" (click)="openReviewDialog(appointment.appointmentId)">
+                        <mat-icon>star_rate</mat-icon>
+                        <span>Rate Service</span>
+                      </button>
+                    }
+
+                    @if (appointment.review) {
+                      <div class="user-rating-display">
+                        <div class="rating-header">
+                          <span class="rating-label">Your Rating</span>
+
+                          <div class="rating-actions">
+                            <button mat-icon-button color="primary"
+                                    (click)="openReviewDialog(appointment.appointmentId, appointment.review)"
+                                    matTooltip="Edit Review">
+                              <mat-icon>edit</mat-icon>
+                            </button>
+                            <button mat-icon-button color="warn"
+                                    (click)="deleteReview(appointment.review.reviewId)"
+                                    matTooltip="Delete Review">
+                              <mat-icon>delete</mat-icon>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div class="stars">
+                          <mat-icon *ngFor="let star of [1,2,3,4,5]"
+                                    [class.filled]="star <= appointment.review.rating">
+                            {{ star <= appointment.review.rating ? 'star' : 'star_border' }}
+                          </mat-icon>
+                        </div>
+
+                        <p class="review-comment-preview" *ngIf="appointment.review.comment">
+                          "{{ appointment.review.comment }}"
+                        </p>
+                      </div>
+                    }
                   </div>
                 </mat-card>
               }

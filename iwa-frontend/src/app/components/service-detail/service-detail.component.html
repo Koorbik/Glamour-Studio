@@ -1,6 +1,5 @@
 <div class="service-detail-page">
   @if (service) {
-    <!-- Hero Section -->
     <section class="service-hero">
       <div class="hero-overlay"></div>
       <div class="hero-content">
@@ -48,7 +47,6 @@
       </div>
     </section>
 
-    <!-- Booking Section -->
     <section class="booking-section">
       <div class="container">
         <div class="booking-header">
@@ -147,7 +145,71 @@
       </div>
     </section>
 
-    <!-- Benefits Section -->
+    <section class="reviews-section" *ngIf="service">
+      <div class="container">
+        <div class="reviews-header-container">
+          <h2>Recent Reviews</h2>
+
+          <div class="rating-summary-card">
+            <div class="rating-number">{{ averageRating | number:'1.1-1' }}</div>
+            <div class="rating-info">
+              <div class="stars">
+                <mat-icon *ngFor="let star of [1,2,3,4,5]"
+                          [class.filled]="star <= averageRating">
+                  {{ star <= averageRating ? 'star' : (star - averageRating < 1 ? 'star_half' : 'star_border') }}
+                </mat-icon>
+              </div>
+              <span class="review-count">Based on {{ reviews.length }} reviews</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="reviews-grid">
+          @for (review of reviews.slice(0, 3); track review.reviewId) {
+            <div class="review-item">
+              <div class="review-top">
+                <div class="reviewer-meta">
+                  <span class="name">{{ review.authorName }}</span>
+                  <span class="date">{{ review.createdAt | date:'MMM d, y' }}</span>
+                </div>
+                <div class="review-stars">
+                  <mat-icon *ngFor="let s of [1,2,3,4,5]" [class.filled]="s <= review.rating">star</mat-icon>
+                </div>
+              </div>
+              <p class="review-comment">{{ review.comment }}</p>
+
+              @if (review.attachmentUrls && review.attachmentUrls.length > 0) {
+                <div class="review-gallery">
+                  @for (url of review.attachmentUrls; track url) {
+                    <img [src]="url"
+                         alt="Review photo"
+                         (click)="openImage(url)"
+                         class="gallery-img">
+                  }
+                </div>
+              }
+            </div>
+          } @empty {
+            <div class="no-reviews-state">
+              <mat-icon>rate_review</mat-icon>
+              <p>No reviews yet. Be the first to share your experience!</p>
+            </div>
+          }
+        </div>
+
+        @if (reviews.length > 3) {
+          <div class="view-all-container" style="text-align: center; margin-top: 4rem;">
+            <a mat-stroked-button color="primary"
+               [routerLink]="['/services', service.serviceId, 'reviews']"
+               style="padding: 1.5rem 3rem; border-radius: 50px; font-size: 1.1rem;">
+              View All {{ reviews.length }} Reviews
+              <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+            </a>
+          </div>
+        }
+      </div>
+    </section>
+
     <section class="benefits-section">
       <div class="container">
         <h2>Why Choose Our {{ service.name }} Service?</h2>
