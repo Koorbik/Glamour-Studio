@@ -493,9 +493,9 @@
                   </div>
 
                   <mat-card-content style="padding: 16px;">
-                    <mat-chip-listbox>
-                      <mat-chip-option color="accent" selected>{{ item.category }}</mat-chip-option>
-                    </mat-chip-listbox>
+
+                    <span class="category-badge">{{ item.category }}</span>
+
                     <p style="margin-top: 8px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                       {{ item.description || 'No description' }}
                     </p>
