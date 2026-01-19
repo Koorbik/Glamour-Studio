@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 public class CreatePortfolioItemDto {
@@ -13,4 +15,6 @@ public class CreatePortfolioItemDto {
 
     @Size(max = 50, message = "Category name is too long")
     private String category;
+
+    private List<String> retainedImageUrls;
 }

@@ -1,0 +1,74 @@
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 500px;
+}
+
+.image-section {
+  margin-top: 10px;
+  h3 { margin-bottom: 5px; font-size: 1rem; color: #333; }
+  .hint { font-size: 0.8rem; color: #777; margin-top: 0; }
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+
+  .thumb-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    cursor: pointer; /* Indicates clickable for preview */
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .delete-btn {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      background: rgba(255, 255, 255, 0.9);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%; /* Make it perfectly round */
+
+      /* Flexbox for perfect centering */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+
+      mat-icon {
+        font-size: 18px;
+        width: 18px;
+        height: 18px;
+        line-height: 18px; /* Reset line-height just in case */
+      }
+
+      &:hover {
+        background: #ffebee; // Light red on hover
+      }
+    }
+
+    &.new-file {
+      border: 2px dashed #3f51b5;
+    }
+  }
+}

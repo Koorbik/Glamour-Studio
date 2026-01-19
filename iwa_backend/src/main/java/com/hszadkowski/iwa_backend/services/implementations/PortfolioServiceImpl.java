@@ -66,7 +66,21 @@ public class PortfolioServiceImpl implements PortfolioService {
         item.setDescription(dto.getDescription());
         item.setCategory(dto.getCategory());
 
-        // Append new files if provided
+        List<String> newRetainedList = dto.getRetainedImageUrls();
+        if (newRetainedList == null) {
+            newRetainedList = new ArrayList<>();
+        }
+
+        // if an image is NOT in the retained list, delete it from disk
+        List<String> currentUrls = item.getImageUrls();
+        for (String url : currentUrls) {
+            if (!newRetainedList.contains(url)) {
+                fileStorageService.deleteFile(url); // Delete from disk
+            }
+        }
+
+        item.setImageUrls(new ArrayList<>(newRetainedList));
+
         if (files != null && !files.isEmpty()) {
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
