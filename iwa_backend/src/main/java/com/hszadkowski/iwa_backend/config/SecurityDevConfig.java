@@ -81,6 +81,7 @@ public class SecurityDevConfig {
                                 "/actuator/health", "/actuator/info", "/api/payments/notify")
                         .permitAll()
                         .requestMatchers("/uploads/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/portfolio").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/services", "/api/services/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/reviews/service/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/availability", "/api/availability/service/**", "/api/availability/*/check", "/api/availability/*/can-book").permitAll()

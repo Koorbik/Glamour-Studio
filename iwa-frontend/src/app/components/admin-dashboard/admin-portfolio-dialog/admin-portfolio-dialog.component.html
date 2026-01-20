@@ -1,0 +1,86 @@
+<h2 mat-dialog-title>{{ isEditMode ? 'Edit Portfolio Item' : 'New Portfolio Item' }}</h2>
+
+<form [formGroup]="form" (ngSubmit)="onSubmit()">
+  <mat-dialog-content>
+    <div class="form-container">
+
+      <mat-form-field appearance="outline">
+        <mat-label>Category</mat-label>
+        <input type="text"
+               placeholder="Pick one or type a new one"
+               matInput
+               formControlName="category"
+               [matAutocomplete]="auto">
+        <mat-autocomplete #auto="matAutocomplete">
+          @for (option of filteredCategories | async; track option) {
+            <mat-option [value]="option">{{ option }}</mat-option>
+          }
+        </mat-autocomplete>
+        <mat-error *ngIf="form.get('category')?.hasError('required')">Category is required</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Description</mat-label>
+        <textarea matInput formControlName="description" rows="3"></textarea>
+      </mat-form-field>
+
+      <div *ngIf="existingImages.length > 0" class="image-section">
+        <h3>Existing Images</h3>
+        <p class="hint">Click image to view full size.</p>
+        <div class="gallery-grid">
+          @for (url of existingImages; track url; let i = $index) {
+            <div class="thumb-container" (click)="viewImage(url)">
+              <img [src]="url">
+              <button type="button" mat-icon-button color="warn"
+                      (click)="$event.stopPropagation(); removeExistingImage(i)"
+                      class="delete-btn">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="image-section">
+        <h3>Add New Images</h3>
+        <input type="file" multiple accept="image/*" (change)="onFilesSelected($event)" #fileInput style="display:none">
+        <button type="button" mat-stroked-button (click)="fileInput.click()">
+          <mat-icon>add_photo_alternate</mat-icon> Select Files
+        </button>
+
+        <div class="gallery-grid" *ngIf="newPreviews.length > 0">
+          @for (preview of newPreviews; track preview; let i = $index) {
+            <div class="thumb-container new-file" (click)="viewImage(preview)">
+              <img [src]="preview">
+              <button type="button" mat-icon-button color="warn"
+                      (click)="$event.stopPropagation(); removeNewFile(i)"
+                      class="delete-btn">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" mat-dialog-close>Cancel</button>
+    <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || isSubmitting">
+      {{ isEditMode ? 'Save Changes' : 'Upload' }}
+    </button>
+  </mat-dialog-actions>
+</form>
+
+<ng-template #imagePreviewTemplate>
+  <div style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.9);">
+
+    <button mat-icon-button (click)="$event.stopPropagation(); closePreview()"
+            style="position: absolute; top: 10px; right: 10px; color: white; background: rgba(0,0,0,0.5); z-index: 10;">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <img [src]="selectedPreviewImage" style="max-width: 95vw; max-height: 95vh; object-fit: contain;">
+  </div>
+</ng-template>

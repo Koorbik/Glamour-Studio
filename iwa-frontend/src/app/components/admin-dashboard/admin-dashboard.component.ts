@@ -22,6 +22,8 @@ import {ConfirmDialogComponent} from '../dialogs/confirm-dialog/confirm-dialog.c
 import {AvailabilitySlotResponseDto} from '../../interfaces/availability.dto';
 import {PaymentService} from '../../services/payment.service';
 import {ReviewResponseDto} from '../../interfaces/review.dto';
+import {PortfolioItemResponseDto} from '../../interfaces/portfolio.dto';
+import { AdminPortfolioDialogComponent } from './admin-portfolio-dialog/admin-portfolio-dialog.component';
 
 interface Appointment {
   appointmentId: number;
@@ -103,6 +105,13 @@ export class AdminDashboardComponent implements OnInit {
   availabilitySlots: AvailabilitySlotResponseDto[] = [];
   services: Service[] = [];
   reviews: ReviewResponseDto[] = [];
+
+  portfolioItems: PortfolioItemResponseDto[] = [];
+  newPortfolioForm: FormGroup;
+  selectedPortfolioFiles: File[] = [];
+  selectedPortfolioPreviews: string[] = [];
+  isUploadingPortfolio = false;
+
   displayedReviewColumns: string[] = ['id', 'author', 'rating', 'comment', 'date', 'actions'];
 
   appointmentDisplayedColumns: string[] = [
@@ -183,6 +192,11 @@ export class AdminDashboardComponent implements OnInit {
       startTime: ['', Validators.required],
       endTime: ['', Validators.required]
     });
+
+    this.newPortfolioForm = this.fb.group({
+      description: ['', [Validators.maxLength(500)]],
+      category: ['', [Validators.maxLength(50)]]
+    });
   }
 
   ngOnInit(): void {
@@ -190,6 +204,7 @@ export class AdminDashboardComponent implements OnInit {
     this.loadAvailabilitySlots();
     this.loadServices();
     this.loadReviews();
+    this.loadPortfolio();
   }
 
   loadAppointments(): void {
@@ -263,6 +278,77 @@ export class AdminDashboardComponent implements OnInit {
       next: (data) => this.reviews = data,
       error: (err) => console.error('Failed to load reviews', err)
     });
+  }
+
+  loadPortfolio(): void {
+    this.apiService.get<PortfolioItemResponseDto[]>('portfolio').subscribe({
+      next: (items) => this.portfolioItems = items,
+      error: (err) => {
+        console.error('Error loading portfolio:', err);
+        this.snackBar.open('Failed to load portfolio items', 'Close', {duration: 3000});
+      }
+    });
+  }
+
+  getUniqueCategories(): string[] {
+    const categories = new Set(this.portfolioItems.map(i => i.category));
+    return Array.from(categories).sort();
+  }
+
+  openPortfolioDialog(item?: PortfolioItemResponseDto) {
+    const dialogRef = this.dialog.open(AdminPortfolioDialogComponent, {
+      width: '600px',
+      maxWidth: '95vw',
+      disableClose: true,
+      data: {
+        item: item, // If item is passed, it's Edit mode. If null, it's Add mode.
+        existingCategories: this.getUniqueCategories()
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        if (item) {
+          const index = this.portfolioItems.findIndex(p => p.id === result.id);
+          if (index !== -1) {
+            this.portfolioItems[index] = result;
+          }
+        } else {
+          this.portfolioItems.unshift(result);
+        }
+      }
+    });
+  }
+
+  deletePortfolioItem(item: PortfolioItemResponseDto): void {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Delete Portfolio Item',
+        message: 'Are you sure you want to delete this item? All associated images will be removed.'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.apiService.delete(`portfolio/${item.id}`).subscribe({
+          next: () => {
+            this.snackBar.open('Item deleted successfully', 'Close', {duration: 3000});
+            this.portfolioItems = this.portfolioItems.filter(p => p.id !== item.id);
+          },
+          error: (err) => {
+            console.error('Error deleting item:', err);
+            this.snackBar.open('Failed to delete item', 'Close', {duration: 3000});
+          }
+        });
+      }
+    });
+  }
+
+  resetPortfolioForm(): void {
+    this.newPortfolioForm.reset();
+    this.selectedPortfolioFiles = [];
+    this.selectedPortfolioPreviews = [];
   }
 
   deleteReview(review: ReviewResponseDto) {
