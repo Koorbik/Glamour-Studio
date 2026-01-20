@@ -1,0 +1,33 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <span class="category-badge">{{ data.category }}</span>
+    <button mat-icon-button (click)="close()" class="close-btn">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="dialog-content">
+    <div class="gallery-section">
+      <div class="main-image-frame">
+        <img [src]="activeImage" alt="Portfolio Detail">
+      </div>
+      <div class="thumbnails-row" *ngIf="data.imageUrls.length > 1">
+        <div *ngFor="let img of data.imageUrls"
+             class="thumb"
+             [class.active]="activeImage === img"
+             (click)="setActiveImage(img)">
+          <img [src]="img">
+        </div>
+      </div>
+    </div>
+
+    <div class="info-section">
+      <h3>Transformation Details</h3>
+      <p class="description">{{ data.description }}</p>
+      <div class="date-meta">
+        <mat-icon>event</mat-icon>
+        <span>Added on {{ data.createdAt | date:'mediumDate' }}</span>
+      </div>
+    </div>
+  </div>
+</div>

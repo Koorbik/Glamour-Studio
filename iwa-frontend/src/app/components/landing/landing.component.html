@@ -1,4 +1,3 @@
-<!-- Hero Section -->
 <section class="hero-section">
   <div class="hero-content">
     <div class="hero-text">
@@ -26,13 +25,11 @@
         <img src="https://images.squarespace-cdn.com/content/v1/55eef42ae4b01232c2a1ec40/1606065380965-WCQ1XD1JP27OJZ79ZIM9/005.JPG"
              alt="Professional makeup artistry"
              class="main-image">
-
       </div>
     </div>
   </div>
 </section>
 
-<!-- About Me Section -->
 <section class="about-section" id="about">
   <div class="container">
     <div class="section-header">
@@ -116,7 +113,82 @@
   </div>
 </section>
 
-<!-- Services Preview Section -->
+<section class="portfolio-section" id="portfolio">
+  <div class="container-fluid">
+    <div class="section-header">
+      <h2 class="section-title">My Portfolio</h2>
+      <p class="section-subtitle">A curated collection of my latest work and transformations</p>
+    </div>
+
+    <div class="portfolio-filters" *ngIf="categories.length > 1">
+      <button
+        *ngFor="let cat of categories"
+        mat-button
+        [class.active-filter]="selectedCategory === cat"
+        (click)="filterCategory(cat)">
+        {{ cat }}
+      </button>
+    </div>
+
+    <div *ngIf="!isLoading && portfolioItems.length === 0" class="empty-portfolio-state">
+      <div class="empty-content">
+        <div class="icon-circle">
+          <mat-icon>auto_awesome</mat-icon>
+        </div>
+        <h3>Our Portfolio is Blooming</h3>
+        <p>
+          We're currently curating a collection of our finest transformations.
+          <br>
+          Book your session today and be the next face of Glamour Studio.
+        </p>
+        <button mat-flat-button color="primary" class="empty-cta-btn" (click)="navigateToBooking()">
+          Start Your Transformation
+        </button>
+      </div>
+    </div>
+
+    <div class="portfolio-carousel-container" *ngIf="filteredItems.length > 0">
+
+      <button mat-icon-button class="nav-btn prev-btn" (click)="scrollCarousel(-1)">
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+
+      <div class="portfolio-carousel" #carousel>
+        <div class="portfolio-card"
+             *ngFor="let item of filteredItems"
+             (click)="openPortfolioDetail(item)">
+
+          <div class="card-image">
+            <img [src]="item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : 'assets/placeholder.jpg'"
+                 [alt]="item.category">
+
+            <div class="multi-image-indicator" *ngIf="item.imageUrls.length > 1">
+              <mat-icon>filter_none</mat-icon>
+            </div>
+
+            <div class="hover-overlay">
+              <span class="view-btn">
+                <mat-icon>visibility</mat-icon> View Details
+              </span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span class="category-tag">{{ item.category }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button mat-icon-button class="nav-btn next-btn" (click)="scrollCarousel(1)">
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+
+      <div class="scroll-fade-left"></div>
+      <div class="scroll-fade-right"></div>
+    </div>
+  </div>
+</section>
+
 <section class="services-preview">
   <div class="container">
     <div class="section-header">
@@ -162,7 +234,6 @@
   </div>
 </section>
 
-<!-- Call to Action Section -->
 <section class="cta-section">
   <div class="container">
     <div class="cta-content">

@@ -1,7 +1,7 @@
+// ... Hero and About styles remain unchanged ...
 // Hero Section - Updated for a lighter, "more white" feel
 .hero-section {
   min-height: 100vh;
-  // Changed from a green gradient to a modern, clean off-white
   background: #f8f9fa;
   display: flex;
   align-items: center;
@@ -22,7 +22,6 @@
 }
 
 .hero-text {
-  // Text color changed from white to a dark color for readability on the light background
   color: #212529;
 }
 
@@ -33,7 +32,6 @@
   margin-bottom: 1.5rem;
 
   .gradient-text {
-    // Re-purposed the green as an accent for the title text
     background: linear-gradient(45deg, #52b788, #87ceaa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -45,7 +43,6 @@
   font-size: 1.25rem;
   line-height: 1.6;
   margin-bottom: 2.5rem;
-  // Darker text color for better contrast
   color: #6c757d;
 }
 
@@ -55,7 +52,7 @@
   flex-wrap: wrap;
 }
 
-// Main CTA button restyled for a light background
+// CTA Buttons
 .cta-button {
   padding: 0.75rem 2rem !important;
   font-size: 1.1rem !important;
@@ -71,7 +68,6 @@
   }
 }
 
-// Secondary button restyled as a green outline button
 .secondary-button {
   padding: 0.75rem 2rem !important;
   font-size: 1.1rem !important;
@@ -110,7 +106,7 @@
   }
 }
 
-// About Section - Kept as-is for a subtle green touch
+// About Section
 .about-section {
   padding: 5rem 0;
   background: linear-gradient(135deg, #f0fff4 0%, #d8f3dc 100%);
@@ -256,22 +252,18 @@
   &.main-photo {
     grid-row: 1 / 3;
   }
-
   &.work-1 {
     grid-column: 2;
     grid-row: 1;
   }
-
   &.work-2 {
     grid-column: 2;
     grid-row: 2;
   }
-
   &.work-3 {
     grid-column: 1;
     grid-row: 3;
   }
-
   &.work-4 {
     grid-column: 2;
     grid-row: 3;
@@ -298,7 +290,322 @@
   }
 }
 
-// Services Preview
+// --- PORTFOLIO SECTION UPDATES ---
+
+.portfolio-section {
+  padding: 5rem 0;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.container-fluid {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  position: relative; // Needed for positioning nav buttons relative to this
+}
+
+.portfolio-filters {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+
+  button {
+    font-size: 1rem;
+    color: #6c757d;
+    border-radius: 30px;
+    padding: 0.5rem 1.5rem;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background-color: #f0fff4;
+      color: #52b788;
+    }
+
+    &.active-filter {
+      background-color: #52b788;
+      color: white;
+      box-shadow: 0 4px 12px rgba(82, 183, 136, 0.3);
+    }
+  }
+}
+
+// Carousel Container
+.portfolio-carousel-container {
+  position: relative;
+  // Ensure we have room for buttons
+  padding: 0 40px;
+
+  // Mobile: remove padding to let cards go edge to edge
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+}
+
+.portfolio-carousel {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 1rem 3rem 1rem;
+
+  // Smooth scroll via CSS (helps mostly for keyboard/touchpad)
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+// --- NEW NAVIGATION BUTTONS ---
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: white;
+  color: #52b788;
+  border: 1px solid #e8e8e8;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+
+  // Icon styling fix for Material
+  mat-icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+  }
+
+  &:hover {
+    background: #52b788;
+    color: white;
+    box-shadow: 0 6px 15px rgba(82, 183, 136, 0.25);
+    cursor: pointer;
+  }
+
+  &.prev-btn {
+    left: 0;
+  }
+
+  &.next-btn {
+    right: 0;
+  }
+
+  // Hide buttons on mobile where touch scroll is native and preferred
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+// Individual Card
+.portfolio-card {
+  flex: 0 0 320px;
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.03);
+
+  // --- CRITICAL FIX FOR HIGHLIGHTING ---
+  user-select: none; // Disables text selection on the card
+  -webkit-user-select: none;
+  // -------------------------------------
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 35px rgba(82, 183, 136, 0.15);
+
+    .hover-overlay {
+      opacity: 1;
+    }
+
+    img {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.card-image {
+  height: 400px;
+  position: relative;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+  }
+}
+
+.multi-image-indicator {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.hover-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(45, 106, 79, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.view-btn {
+  background: white;
+  color: #2d6a4f;
+  padding: 0.8rem 1.5rem;
+  border-radius: 30px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+
+  mat-icon { font-size: 20px; }
+}
+
+.portfolio-card:hover .view-btn {
+  transform: translateY(0);
+}
+
+.card-footer {
+  padding: 1rem;
+  text-align: center;
+  border-top: 1px solid #f0f0f0;
+}
+
+.category-tag {
+  color: #52b788;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.scroll-fade-left, .scroll-fade-right {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 100px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.scroll-fade-left {
+  left: 40px; // Offset because of nav buttons
+  background: linear-gradient(to right, white, transparent);
+
+  @media (max-width: 768px) { left: 0; }
+}
+
+.scroll-fade-right {
+  right: 40px; // Offset because of nav buttons
+  background: linear-gradient(to left, white, transparent);
+
+  @media (max-width: 768px) { right: 0; }
+}
+
+// Empty State Styling
+.empty-portfolio-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5rem 2rem;
+  background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+  border-radius: 30px;
+  width: 100%;
+  max-width: 800px;
+  margin: 2rem auto;
+  text-align: center;
+  border: 1px solid rgba(82, 183, 136, 0.15);
+  box-shadow: 0 10px 40px rgba(82, 183, 136, 0.05);
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+
+  .icon-circle {
+    width: 90px;
+    height: 90px;
+    background-color: rgba(82, 183, 136, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    transition: transform 0.3s ease;
+
+    mat-icon {
+      font-size: 3rem;
+      width: 3rem;
+      height: 3rem;
+      color: #52b788;
+    }
+  }
+
+  h3 {
+    font-size: 2rem;
+    color: #2d6a4f;
+    margin: 0;
+    font-weight: 700;
+  }
+
+  p {
+    color: #6c757d;
+    font-size: 1.15rem;
+    max-width: 500px;
+    line-height: 1.7;
+    margin: 0;
+  }
+}
+
+.empty-cta-btn {
+  margin-top: 1rem;
+  padding: 1.5rem 2.5rem !important;
+  border-radius: 50px !important;
+  font-size: 1.1rem !important;
+  box-shadow: 0 8px 20px rgba(82, 183, 136, 0.25) !important;
+}
+
+// Services & CTA (Preserved)
 .services-preview {
   padding: 5rem 0;
   background: white;
@@ -372,7 +679,6 @@
   text-align: center;
 }
 
-// CTA Section - Restyled to be light
 .cta-section {
   padding: 5rem 0;
   background: #f8f9fa;
@@ -383,13 +689,13 @@
   h2 {
     font-size: 3rem;
     font-weight: 700;
-    color: #212529; // Dark text on light background
+    color: #212529;
     margin-bottom: 1rem;
   }
 
   p {
     font-size: 1.25rem;
-    color: #6c757d; // Darker secondary text
+    color: #6c757d;
     margin-bottom: 2rem;
     max-width: 600px;
     margin-left: auto;
@@ -416,11 +722,7 @@
 }
 
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.5rem;
-  }
-
-  .section-title {
+  .hero-title, .section-title {
     font-size: 2.5rem;
   }
 
@@ -436,17 +738,30 @@
     grid-template-columns: 1fr;
   }
 
+  .portfolio-filters button {
+    font-size: 0.9rem;
+    padding: 0.25rem 1rem;
+  }
+
+  .portfolio-card {
+    flex: 0 0 280px;
+  }
+
+  .card-image {
+    height: 350px;
+  }
+
+  .scroll-fade-left, .scroll-fade-right {
+    width: 30px;
+  }
+
   .cta-content h2 {
     font-size: 2.5rem;
   }
 }
 
 @media (max-width: 480px) {
-  .container {
-    padding: 0 1rem;
-  }
-
-  .hero-content {
+  .container, .hero-content {
     padding: 0 1rem;
   }
 
