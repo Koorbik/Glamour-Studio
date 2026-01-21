@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -20,11 +21,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @org.springframework.stereotype.Service
 @RequiredArgsConstructor
-@Transactional
 @Slf4j
 public class AppointmentServiceImpl implements AppointmentService {
 
@@ -40,50 +41,52 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final PayUService payUService;
     private final ContractService contractService;
     private final PaymentRepository paymentRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     public AppointmentResponseDto bookAppointment(BookAppointmentDto request, String userEmail) {
+        Appointment savedAppointment = transactionTemplate.execute(status -> {
+            AppUser user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        AppUser user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            if (!availabilityService.canBookSlot(request.getSlotId())) {
+                throw new RuntimeException("This time slot is no longer available or has already passed");
+            }
 
-        if (!availabilityService.canBookSlot(request.getSlotId())) {
-            throw new RuntimeException("This time slot is no longer available or has already passed");
-        }
+            AvailabilitySlot slot = availabilitySlotRepository.findById(request.getSlotId())
+                    .orElseThrow(() -> new RuntimeException("Availability slot not found"));
 
-        AvailabilitySlot slot = availabilitySlotRepository.findById(request.getSlotId())
-                .orElseThrow(() -> new RuntimeException("Availability slot not found"));
+            if (slot.getIsBooked()) {
+                throw new RuntimeException("This time slot is no longer available");
+            }
 
-        if (slot.getIsBooked()) {
-            throw new RuntimeException("This time slot is no longer available");
-        }
+            if (!slot.getService().getServiceId().equals(request.getServiceId())) {
+                throw new RuntimeException("Service mismatch with selected slot");
+            }
 
-        if (!slot.getService().getServiceId().equals(request.getServiceId())) {
-            throw new RuntimeException("Service mismatch with selected slot");
-        }
+            Service service = slot.getService();
 
-        Service service = slot.getService();
+            AppointmentStatus appStatus = appointmentStatusRepository.findByName("CONFIRMED")
+                    .orElseThrow(() -> new RuntimeException("Default appointment status not found"));
 
-        AppointmentStatus status = appointmentStatusRepository.findByName("CONFIRMED")
-                .orElseThrow(() -> new RuntimeException("Default appointment status not found"));
+            Appointment appointment = new Appointment();
+            appointment.setAppUser(user);
+            appointment.setService(service);
+            appointment.setStatus(appStatus);
+            appointment.setLocation(request.getLocation());
+            appointment.setScheduledAt(slot.getStartTime().toLocalDate());
+            appointment.setDescription(request.getDescription());
+            appointment.setSlot(slot);
 
-        Appointment appointment = new Appointment();
-        appointment.setAppUser(user);
-        appointment.setService(service);
-        appointment.setStatus(status);
-        appointment.setLocation(request.getLocation());
-        appointment.setScheduledAt(slot.getStartTime().toLocalDate());
-        appointment.setDescription(request.getDescription());
-        appointment.setSlot(slot);
+            slot.setIsBooked(true);
+            availabilitySlotRepository.save(slot);
 
-        slot.setIsBooked(true);
-        availabilitySlotRepository.save(slot);
+            if (!Boolean.TRUE.equals(request.getAcceptsTerms())) {
+                throw new RuntimeException("You must accept the terms and conditions.");
+            }
 
-        if (!Boolean.TRUE.equals(request.getAcceptsTerms())) {
-            throw new RuntimeException("You must accept the terms and conditions.");
-        }
-
-        Appointment savedAppointment = appointmentRepository.save(appointment);
+            return appointmentRepository.save(appointment);
+        });
 
         byte[] contractPdf = null;
         try {
@@ -92,14 +95,12 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.error("Failed to generate contract", e);
         }
 
-        // Send confirmation email
         sendBookingConfirmationEmail(savedAppointment, contractPdf);
 
         if (savedAppointment.getAppUser().isSmsNotificationsEnabled()) {
             sendSmsNotification(savedAppointment, "Booking Confirmed");
         }
 
-        // Sync to Google Calendar if user is connected
         syncAppointmentToGoogleCalendar(savedAppointment, userEmail, "create");
 
         return mapToResponseDto(savedAppointment);
@@ -107,57 +108,64 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentResponseDto rescheduleAppointment(Integer appointmentId, RescheduleAppointmentDto rescheduleDto, String userEmail) {
+        // We need to capture the oldSlot to pass it to the email service later
+        // AtomicReference is a final object we can write to from inside the lambda
+        final AtomicReference<AvailabilitySlot> oldSlotRef = new AtomicReference<>();
 
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(
-                        "Appointment with ID " + appointmentId + " not found"));
 
-        if (!appointment.getAppUser().getEmail().equals(userEmail)) {
-            throw new AccessDeniedException("You can only reschedule your own appointments");
-        }
+        Appointment updatedAppointment = transactionTemplate.execute(status -> {
+            Appointment appointment = appointmentRepository.findById(appointmentId)
+                    .orElseThrow(() -> new AppointmentNotFoundException(
+                            "Appointment with ID " + appointmentId + " not found"));
 
-        if ("CANCELLED".equals(appointment.getStatus().getName()) ||
-                "COMPLETED".equals(appointment.getStatus().getName())) {
-            throw new RuntimeException("Cannot reschedule a " + appointment.getStatus().getName().toLowerCase() + " appointment");
-        }
+            if (!appointment.getAppUser().getEmail().equals(userEmail)) {
+                throw new AccessDeniedException("You can only reschedule your own appointments");
+            }
 
-        if (!availabilityService.canBookSlot(rescheduleDto.getNewSlotId())) {
-            throw new RuntimeException("The selected time slot is no longer available or has already passed");
-        }
+            if ("CANCELLED".equals(appointment.getStatus().getName()) ||
+                    "COMPLETED".equals(appointment.getStatus().getName())) {
+                throw new RuntimeException("Cannot reschedule a " + appointment.getStatus().getName().toLowerCase() + " appointment");
+            }
 
-        AvailabilitySlot newSlot = availabilitySlotRepository.findById(rescheduleDto.getNewSlotId())
-                .orElseThrow(() -> new RuntimeException("New availability slot not found"));
+            if (!availabilityService.canBookSlot(rescheduleDto.getNewSlotId())) {
+                throw new RuntimeException("The selected time slot is no longer available or has already passed");
+            }
 
-        if (newSlot.getIsBooked()) {
-            throw new RuntimeException("The selected time slot is no longer available");
-        }
+            AvailabilitySlot newSlot = availabilitySlotRepository.findById(rescheduleDto.getNewSlotId())
+                    .orElseThrow(() -> new RuntimeException("New availability slot not found"));
 
-        if (!newSlot.getService().getServiceId().equals(rescheduleDto.getServiceId()) ||
-                !appointment.getService().getServiceId().equals(rescheduleDto.getServiceId())) {
-            throw new RuntimeException("Service mismatch");
-        }
+            if (newSlot.getIsBooked()) {
+                throw new RuntimeException("The selected time slot is no longer available");
+            }
 
-        AvailabilitySlot oldSlot = appointment.getSlot();
-        if (oldSlot != null) {
-            oldSlot.setIsBooked(false);
-            availabilitySlotRepository.save(oldSlot);
-        }
+            if (!newSlot.getService().getServiceId().equals(rescheduleDto.getServiceId()) ||
+                    !appointment.getService().getServiceId().equals(rescheduleDto.getServiceId())) {
+                throw new RuntimeException("Service mismatch");
+            }
 
-        newSlot.setIsBooked(true);
-        availabilitySlotRepository.save(newSlot);
+            AvailabilitySlot oldSlot = appointment.getSlot();
+            oldSlotRef.set(oldSlot);
 
-        appointment.setSlot(newSlot);
-        appointment.setScheduledAt(newSlot.getStartTime().toLocalDate());
+            if (oldSlot != null) {
+                oldSlot.setIsBooked(false);
+                availabilitySlotRepository.save(oldSlot);
+            }
 
-        Appointment updatedAppointment = appointmentRepository.save(appointment);
+            newSlot.setIsBooked(true);
+            availabilitySlotRepository.save(newSlot);
 
-        sendRescheduleNotificationEmail(updatedAppointment, oldSlot);
+            appointment.setSlot(newSlot);
+            appointment.setScheduledAt(newSlot.getStartTime().toLocalDate());
+
+            return appointmentRepository.save(appointment);
+        });
+
+        sendRescheduleNotificationEmail(updatedAppointment, oldSlotRef.get());
 
         if (updatedAppointment.getAppUser().isSmsNotificationsEnabled()) {
             sendSmsNotification(updatedAppointment, "Rescheduled");
         }
 
-        // Update Google Calendar event if user is connected
         syncAppointmentToGoogleCalendar(updatedAppointment, userEmail, "update");
 
         return mapToResponseDto(updatedAppointment);
@@ -195,43 +203,46 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public void cancelAppointment(Integer appointmentId, String userEmail) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(
-                        "Appointment with ID " + appointmentId + " not found"));
+        Appointment cancelledAppointment = transactionTemplate.execute(status -> {
+            Appointment appointment = appointmentRepository.findById(appointmentId)
+                    .orElseThrow(() -> new AppointmentNotFoundException(
+                            "Appointment with ID " + appointmentId + " not found"));
 
-        // Get the user who is making the cancellation request
-        AppUser requestingUser = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+            AppUser requestingUser = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Check if user can cancel this appointment (own appointment or admin user)
-        boolean isOwner = appointment.getAppUser().getEmail().equals(userEmail);
-        boolean isAdmin = "ROLE_ADMIN".equalsIgnoreCase(requestingUser.getRole());
+            boolean isOwner = appointment.getAppUser().getEmail().equals(userEmail);
+            boolean isAdmin = "ROLE_ADMIN".equalsIgnoreCase(requestingUser.getRole());
 
-        if (!isOwner && !isAdmin) {
-            throw new AccessDeniedException("You can only cancel your own appointments");
-        }
+            if (!isOwner && !isAdmin) {
+                throw new AccessDeniedException("You can only cancel your own appointments");
+            }
 
-        Payment payment = appointment.getPayment();
-        if (payment != null && "COMPLETED".equals(payment.getStatus())) {
-            handleRefund(appointment, payment);
-        }
+            // TODO: Consider refactoring handleRefund to separate the API call from the DB update.
+            Payment payment = appointment.getPayment();
+            if (payment != null && "COMPLETED".equals(payment.getStatus())) {
+                handleRefund(appointment, payment);
+            }
 
-        AppointmentStatus cancelledStatus = appointmentStatusRepository.findByName("CANCELLED")
-                .orElseThrow(() -> new RuntimeException("Cancelled status not found"));
+            AppointmentStatus cancelledStatus = appointmentStatusRepository.findByName("CANCELLED")
+                    .orElseThrow(() -> new RuntimeException("Cancelled status not found"));
 
-        appointment.setStatus(cancelledStatus);
-        appointmentRepository.save(appointment);
+            appointment.setStatus(cancelledStatus);
+            Appointment saved = appointmentRepository.save(appointment);
 
-        releaseSlotForAppointment(appointment);
+            releaseSlotForAppointment(saved);
 
-        sendCancellationEmail(appointment);
+            return saved;
+        });
 
-        if (appointment.getAppUser().isSmsNotificationsEnabled()) {
-            sendSmsNotification(appointment, "Cancelled");
+        sendCancellationEmail(cancelledAppointment);
+
+        if (cancelledAppointment.getAppUser().isSmsNotificationsEnabled()) {
+            sendSmsNotification(cancelledAppointment, "Cancelled");
         }
 
         // Delete from Google Calendar of the appointment owner
-        syncAppointmentToGoogleCalendar(appointment, appointment.getAppUser().getEmail(), "delete");
+        syncAppointmentToGoogleCalendar(cancelledAppointment, cancelledAppointment.getAppUser().getEmail(), "delete");
     }
 
     private void sendSmsNotification(Appointment appointment, String type) {
@@ -314,25 +325,28 @@ public class AppointmentServiceImpl implements AppointmentService {
 
     @Override
     public AppointmentResponseDto updateAppointmentStatus(Integer appointmentId, UpdateAppointmentStatusDto statusUpdate) {
-        Appointment appointment = appointmentRepository.findById(appointmentId)
-                .orElseThrow(() -> new AppointmentNotFoundException(
-                        "Appointment with ID " + appointmentId + " not found"));
+        Appointment updatedAppointment = transactionTemplate.execute(status -> {
+            Appointment appointment = appointmentRepository.findById(appointmentId)
+                    .orElseThrow(() -> new AppointmentNotFoundException(
+                            "Appointment with ID " + appointmentId + " not found"));
 
-        AppointmentStatus newStatus = appointmentStatusRepository.findByName(statusUpdate.getStatus().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Status '" + statusUpdate.getStatus() + "' not found"));
+            AppointmentStatus newStatus = appointmentStatusRepository.findByName(statusUpdate.getStatus().toUpperCase())
+                    .orElseThrow(() -> new RuntimeException("Status '" + statusUpdate.getStatus() + "' not found"));
+
+            if ("CANCELLED".equalsIgnoreCase(statusUpdate.getStatus())) {
+                releaseSlotForAppointment(appointment);
+            }
+
+            appointment.setStatus(newStatus);
+            return appointmentRepository.save(appointment);
+        });
+
+        String ownerEmail = updatedAppointment.getAppUser().getEmail();
 
         if ("CANCELLED".equalsIgnoreCase(statusUpdate.getStatus())) {
-            releaseSlotForAppointment(appointment);
-            // Delete from Google Calendar for the user
-            syncAppointmentToGoogleCalendar(appointment, appointment.getAppUser().getEmail(), "delete");
-        }
-
-        appointment.setStatus(newStatus);
-        Appointment updatedAppointment = appointmentRepository.save(appointment);
-
-        // Update Google Calendar event if status changed but not cancelled
-        if (!"CANCELLED".equalsIgnoreCase(statusUpdate.getStatus())) {
-            syncAppointmentToGoogleCalendar(updatedAppointment, appointment.getAppUser().getEmail(), "update");
+            syncAppointmentToGoogleCalendar(updatedAppointment, ownerEmail, "delete");
+        } else {
+            syncAppointmentToGoogleCalendar(updatedAppointment, ownerEmail, "update");
         }
 
         return mapToResponseDto(updatedAppointment);
