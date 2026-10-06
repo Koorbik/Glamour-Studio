@@ -206,6 +206,12 @@ public class AppointmentServiceImpl implements AppointmentService {
                 throw new AccessDeniedException("You can only cancel your own appointments");
             }
 
+            // Cancelling twice must not release the slot twice: after the first cancel the slot
+            // may already be booked by someone else. This also stops a second refund attempt.
+            if ("CANCELLED".equals(appointment.getStatus().getName())) {
+                throw new RuntimeException("Appointment is already cancelled");
+            }
+
             AppointmentStatus cancelledStatus = appointmentStatusRepository.findByName("CANCELLED")
                     .orElseThrow(() -> new RuntimeException("Cancelled status not found"));
 
@@ -321,7 +327,10 @@ public class AppointmentServiceImpl implements AppointmentService {
             AppointmentStatus newStatus = appointmentStatusRepository.findByName(statusUpdate.getStatus().toUpperCase())
                     .orElseThrow(() -> new RuntimeException("Status '" + statusUpdate.getStatus() + "' not found"));
 
-            if ("CANCELLED".equalsIgnoreCase(statusUpdate.getStatus())) {
+            // Release only on the transition into CANCELLED: an appointment that is already
+            // cancelled no longer holds its slot, which may be booked by someone else by now.
+            boolean alreadyCancelled = "CANCELLED".equals(appointment.getStatus().getName());
+            if ("CANCELLED".equalsIgnoreCase(statusUpdate.getStatus()) && !alreadyCancelled) {
                 releaseSlotForAppointment(appointment);
             }
 
