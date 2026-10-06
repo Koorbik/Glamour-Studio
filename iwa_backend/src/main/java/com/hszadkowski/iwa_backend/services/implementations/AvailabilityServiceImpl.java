@@ -129,15 +129,14 @@ public class AvailabilityServiceImpl implements AvailabilityService {
 
     @Override
     public void markSlotAsBooked(Integer slotId) {
-        AvailabilitySlot slot = availabilitySlotRepository.findById(slotId)
-                .orElseThrow(() -> new RuntimeException("Slot not found"));
-
-        if (slot.getIsBooked()) {
-            throw new RuntimeException("Slot is already booked");
+        if (!availabilitySlotRepository.existsById(slotId)) {
+            throw new RuntimeException("Slot not found");
         }
 
-        slot.setIsBooked(true);
-        availabilitySlotRepository.save(slot);
+        // Same atomic claim as a customer booking, so the two cannot both take the slot
+        if (availabilitySlotRepository.claimSlot(slotId, LocalDateTime.now()) == 0) {
+            throw new RuntimeException("Slot is already booked or has already passed");
+        }
     }
 
     @Override

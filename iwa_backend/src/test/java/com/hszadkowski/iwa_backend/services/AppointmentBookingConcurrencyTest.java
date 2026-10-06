@@ -13,7 +13,9 @@ import com.hszadkowski.iwa_backend.repos.AvailabilitySlotRepository;
 import com.hszadkowski.iwa_backend.repos.ServiceRepository;
 import com.hszadkowski.iwa_backend.repos.UserRepository;
 import com.hszadkowski.iwa_backend.services.implementations.AppointmentServiceImpl;
+import com.hszadkowski.iwa_backend.services.implementations.AvailabilityServiceImpl;
 import com.hszadkowski.iwa_backend.services.interfaces.AppointmentService;
+import com.hszadkowski.iwa_backend.services.interfaces.AvailabilityService;
 import com.hszadkowski.iwa_backend.services.interfaces.ContractService;
 import com.hszadkowski.iwa_backend.services.interfaces.EmailService;
 import com.hszadkowski.iwa_backend.services.interfaces.EmailTemplateService;
@@ -22,6 +24,7 @@ import com.hszadkowski.iwa_backend.services.interfaces.PayUService;
 import com.hszadkowski.iwa_backend.services.interfaces.SmsService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -45,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 // Each attempt must run in its own transaction on its own connection, so the
 // test-managed transaction that @DataJpaTest normally wraps around a test is switched off.
 @DataJpaTest(properties = "spring.sql.init.mode=never")
-@Import(AppointmentServiceImpl.class)
+@Import({AppointmentServiceImpl.class, AvailabilityServiceImpl.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class AppointmentBookingConcurrencyTest {
 
@@ -53,6 +56,8 @@ class AppointmentBookingConcurrencyTest {
 
     @Autowired
     private AppointmentService appointmentService;
+    @Autowired
+    private AvailabilityService availabilityService;
     @Autowired
     private AppointmentRepository appointmentRepository;
     @Autowired
@@ -142,6 +147,25 @@ class AppointmentBookingConcurrencyTest {
         assertThat(isBooked(contestedSlotId)).isTrue();
         // The original slot is released only if the reschedule was the attempt that won
         assertThat(isBooked(originalSlotId)).isEqualTo(appointmentsForSlot(originalSlotId).size() == 1);
+    }
+
+    // One admin call against the bookings is a narrow window, so a single round would
+    // usually pass even with a check-then-set; repeating it makes a regression show up.
+    @RepeatedTest(10)
+    void adminMarkingSlotAsBookedRacingWithBookingsLeavesExactlyOneWinner() throws Exception {
+        Integer slotId = createFreeSlot(1);
+
+        List<Runnable> attempts = new ArrayList<>();
+        attempts.add(() -> availabilityService.markSlotAsBooked(slotId));
+        for (int i = 1; i < CONCURRENT_REQUESTS; i++) {
+            String email = createUser("customer" + i + "@test.local", "ROLE_USER").getEmail();
+            attempts.add(() -> appointmentService.bookAppointment(bookingRequest(slotId), email));
+        }
+
+        assertThat(countSuccessfulAttempts(attempts)).isEqualTo(1);
+        assertThat(isBooked(slotId)).isTrue();
+        // No appointment at all if the admin was the one who got the slot
+        assertThat(appointmentsForSlot(slotId)).hasSizeLessThanOrEqualTo(1);
     }
 
     private int countSuccessfulAttempts(List<Runnable> attempts) throws Exception {
