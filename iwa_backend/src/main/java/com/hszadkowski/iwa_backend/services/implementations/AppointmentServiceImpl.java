@@ -33,7 +33,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     private final UserRepository userRepository;
     private final AppointmentStatusRepository appointmentStatusRepository;
     private final AvailabilitySlotRepository availabilitySlotRepository;
-    private final AvailabilityService availabilityService;
     private final EmailService emailService;
     private final SmsService smsService;
     private final EmailTemplateService emailTemplateService;
@@ -49,16 +48,14 @@ public class AppointmentServiceImpl implements AppointmentService {
             AppUser user = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            if (!availabilityService.canBookSlot(request.getSlotId())) {
+            // Claim the slot in the database before loading it: a read-then-write on the entity
+            // would let two concurrent requests both see the slot as free.
+            if (availabilitySlotRepository.claimSlot(request.getSlotId(), LocalDateTime.now()) == 0) {
                 throw new RuntimeException("This time slot is no longer available or has already passed");
             }
 
             AvailabilitySlot slot = availabilitySlotRepository.findById(request.getSlotId())
                     .orElseThrow(() -> new RuntimeException("Availability slot not found"));
-
-            if (slot.getIsBooked()) {
-                throw new RuntimeException("This time slot is no longer available");
-            }
 
             if (!slot.getService().getServiceId().equals(request.getServiceId())) {
                 throw new RuntimeException("Service mismatch with selected slot");
@@ -77,9 +74,6 @@ public class AppointmentServiceImpl implements AppointmentService {
             appointment.setScheduledAt(slot.getStartTime().toLocalDate());
             appointment.setDescription(request.getDescription());
             appointment.setSlot(slot);
-
-            slot.setIsBooked(true);
-            availabilitySlotRepository.save(slot);
 
             if (!Boolean.TRUE.equals(request.getAcceptsTerms())) {
                 throw new RuntimeException("You must accept the terms and conditions.");
@@ -127,16 +121,13 @@ public class AppointmentServiceImpl implements AppointmentService {
                 throw new RuntimeException("Cannot reschedule a " + appointment.getStatus().getName().toLowerCase() + " appointment");
             }
 
-            if (!availabilityService.canBookSlot(rescheduleDto.getNewSlotId())) {
+            // Same atomic claim as in bookAppointment, so a reschedule cannot race a booking
+            if (availabilitySlotRepository.claimSlot(rescheduleDto.getNewSlotId(), LocalDateTime.now()) == 0) {
                 throw new RuntimeException("The selected time slot is no longer available or has already passed");
             }
 
             AvailabilitySlot newSlot = availabilitySlotRepository.findById(rescheduleDto.getNewSlotId())
                     .orElseThrow(() -> new RuntimeException("New availability slot not found"));
-
-            if (newSlot.getIsBooked()) {
-                throw new RuntimeException("The selected time slot is no longer available");
-            }
 
             if (!newSlot.getService().getServiceId().equals(rescheduleDto.getServiceId()) ||
                     !appointment.getService().getServiceId().equals(rescheduleDto.getServiceId())) {
@@ -150,9 +141,6 @@ public class AppointmentServiceImpl implements AppointmentService {
                 oldSlot.setIsBooked(false);
                 availabilitySlotRepository.save(oldSlot);
             }
-
-            newSlot.setIsBooked(true);
-            availabilitySlotRepository.save(newSlot);
 
             appointment.setSlot(newSlot);
             appointment.setScheduledAt(newSlot.getStartTime().toLocalDate());
@@ -218,12 +206,6 @@ public class AppointmentServiceImpl implements AppointmentService {
                 throw new AccessDeniedException("You can only cancel your own appointments");
             }
 
-            // TODO: Consider refactoring handleRefund to separate the API call from the DB update.
-            Payment payment = appointment.getPayment();
-            if (payment != null && "COMPLETED".equals(payment.getStatus())) {
-                handleRefund(appointment, payment);
-            }
-
             AppointmentStatus cancelledStatus = appointmentStatusRepository.findByName("CANCELLED")
                     .orElseThrow(() -> new RuntimeException("Cancelled status not found"));
 
@@ -234,6 +216,12 @@ public class AppointmentServiceImpl implements AppointmentService {
 
             return saved;
         });
+
+        // Refund only once the cancellation is committed, so the PayU call does not hold the transaction open
+        Payment payment = cancelledAppointment.getPayment();
+        if (payment != null && "COMPLETED".equals(payment.getStatus())) {
+            handleRefund(cancelledAppointment, payment);
+        }
 
         sendCancellationEmail(cancelledAppointment);
 

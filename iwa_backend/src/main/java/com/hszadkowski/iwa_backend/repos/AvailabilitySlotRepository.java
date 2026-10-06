@@ -4,6 +4,7 @@ import com.hszadkowski.iwa_backend.models.AppUser;
 import com.hszadkowski.iwa_backend.models.AvailabilitySlot;
 import com.hszadkowski.iwa_backend.models.Service;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -39,5 +40,12 @@ public interface AvailabilitySlotRepository extends JpaRepository<AvailabilitySl
                                                          @Param("startTime") LocalDateTime startTime,
                                                          @Param("endTime") LocalDateTime endTime,
                                                          @Param("excludeId") Integer excludeId);
+
+    // Atomic check-and-set: the row is only updated while it is still free, so when several
+    // transactions race for the same slot exactly one of them gets a row count of 1.
+    @Modifying
+    @Query("UPDATE AvailabilitySlot a SET a.isBooked = true " +
+            "WHERE a.slotId = :slotId AND a.isBooked = false AND a.startTime > :now")
+    int claimSlot(@Param("slotId") Integer slotId, @Param("now") LocalDateTime now);
 
 }
